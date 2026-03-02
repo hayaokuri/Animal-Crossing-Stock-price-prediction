@@ -14,14 +14,13 @@
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="text-center mb-10">
-      <h1 class="text-4xl font-extrabold text-kabu flex items-center justify-center gap-3">カブ価予測ツールPro</h1>
+      <h1 class="text-3xl font-extrabold text-kabu flex items-center justify-center gap-2">カブ価予測ツールPro</h1>
     </header>
 
     <main class="grid grid-cols-1 xl:grid-cols-3 xl:gap-8">
       <div class="xl:col-span-1 space-y-6">
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h2 class="text-xl font-bold mb-5">価格・条件を入力</h2>
-          
           <div class="space-y-4">
             <div class="bg-kabu/5 p-4 rounded-xl border border-kabu/20 space-y-3">
               <div>
@@ -42,7 +41,7 @@
 
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
               <label class="block text-sm font-semibold text-gray-700 mb-1">日曜の買値</label>
-              <input type="number" id="buy" placeholder="例: 90" class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none">
+              <input type="number" id="buy" value="100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -53,8 +52,8 @@
                     <div>
                       <label class="block text-xs font-medium text-gray-500 mb-1">${d.l}</label>
                       <div class="space-y-1">
-                        <input type="number" id="${d.id}1" placeholder="AM" class="w-full px-2 py-1 border rounded focus:ring-1 outline-none text-sm">
-                        <input type="number" id="${d.id}2" placeholder="PM" class="w-full px-2 py-1 border rounded focus:ring-1 outline-none text-sm">
+                        <input type="number" id="${d.id}1" placeholder="AM" class="w-full px-2 py-1 border rounded outline-none text-sm input-sell">
+                        <input type="number" id="${d.id}2" placeholder="PM" class="w-full px-2 py-1 border rounded outline-none text-sm input-sell">
                       </div>
                     </div>
                   `);
@@ -62,50 +61,116 @@
               </script>
             </div>
           </div>
-
-          <button id="predictBtn" class="w-full mt-6 bg-kabu hover:bg-kabu-light text-white font-bold py-3 rounded-xl shadow transition">予測を実行する</button>
+          <button id="predictBtn" class="w-full mt-6 bg-kabu text-white font-bold py-3 rounded-xl shadow transition">予測を実行する</button>
         </section>
 
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
-          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">未実行</pre>
+          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">自動保存データを読み込み中...</pre>
         </section>
       </div>
 
       <div class="xl:col-span-2">
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
           <h2 class="text-xl font-bold mb-6">価格推移予測</h2>
-          <div class="relative h-[400px]">
-            <canvas id="priceChart"></canvas>
-          </div>
+          <div class="relative h-[400px]"><canvas id="priceChart"></canvas></div>
         </section>
       </div>
     </main>
   </div>
 
   <script>
-    let chartInstance = null;
     const patternNames = ["波型", "大跳ね型", "減少型", "小跳ね型"];
     const labels = ["月AM", "月PM", "火AM", "火PM", "水AM", "水PM", "木AM", "木PM", "金AM", "金PM", "土AM", "土PM"];
+    const inputIds = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'];
+    let chartInstance = null;
 
-    document.getElementById('predictBtn').addEventListener('click', () => {
+    // ACNH基準の週IDを取得（日曜AM5:00切り替え）
+    function getACNHWeekId() {
+      const d = new Date();
+      d.setHours(d.getHours() - 5);
+      const diff = d.getDate() - d.getDay();
+      const sunday = new Date(d.setDate(diff));
+      return `${sunday.getFullYear()}-${sunday.getMonth()}-${sunday.getDate()}`;
+    }
+
+    // 最も確率の高いパターンを算出
+    function getBestPattern(prices, isFirstBuy, prevPattern) {
       try {
-        const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
-        const buyPrice = getVal('buy');
-        const sellPrices = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'].map(getVal);
+        const predictor = new Predictor(prices, isFirstBuy, prevPattern);
+        const possibilities = predictor.analyze_possibilities();
+        if (possibilities.length === 0) return -1;
         
-        // エンジンが要求する配列形式（[日曜AM, 日曜PM, 月AM...]）に結合
-        const prices = [buyPrice, buyPrice, ...sellPrices];
-        
-        const isFirstBuy = document.getElementById('first_buy').checked;
-        const prevPattern = parseInt(document.getElementById('previous_pattern').value, 10);
+        let best = -1, maxProb = -1;
+        possibilities.forEach(p => {
+          if (p.category_total_probability > maxProb) {
+            maxProb = p.category_total_probability;
+            best = p.pattern_number;
+          }
+        });
+        return best;
+      } catch (e) { return -1; }
+    }
 
-        // クラス初期化と予測実行
+    // 状態の保存
+    function saveState() {
+      const state = {
+        weekId: getACNHWeekId(),
+        buy: parseInt(document.getElementById('buy').value, 10) || 100,
+        sells: inputIds.map(id => parseInt(document.getElementById(id).value, 10) || NaN),
+        prev: parseInt(document.getElementById('previous_pattern').value, 10),
+        first: document.getElementById('first_buy').checked
+      };
+      localStorage.setItem('turnip_state', JSON.stringify(state));
+    }
+
+    // 状態の復元と週替わり処理
+    function loadState() {
+      const saved = localStorage.getItem('turnip_state');
+      const currentWeekId = getACNHWeekId();
+      
+      if (saved) {
+        const state = JSON.parse(saved);
+        if (state.weekId !== currentWeekId) {
+          // 新しい週の場合：前週データからパターンを解析して自動入力
+          const oldPrices = [state.buy, state.buy, ...state.sells];
+          const bestPattern = getBestPattern(oldPrices, state.first, state.prev);
+          
+          document.getElementById('previous_pattern').value = bestPattern;
+          document.getElementById('first_buy').checked = false;
+          document.getElementById('buy').value = 100;
+          inputIds.forEach(id => document.getElementById(id).value = '');
+          
+          const pName = bestPattern >= 0 ? patternNames[bestPattern] : '不明';
+          document.getElementById('result').textContent = `新しい週になりました。\n先週のデータから前回パターンを「${pName}」と自動設定しました。`;
+          saveState();
+        } else {
+          // 同じ週の場合：入力状態を復元
+          document.getElementById('previous_pattern').value = state.prev;
+          document.getElementById('first_buy').checked = state.first;
+          document.getElementById('buy').value = state.buy || 100;
+          inputIds.forEach((id, i) => document.getElementById(id).value = isNaN(state.sells[i]) ? '' : state.sells[i]);
+          runPrediction();
+        }
+      } else {
+        document.getElementById('result').textContent = "数値を入力して予測を実行してください。";
+      }
+    }
+
+    // 予測の実行と描画
+    function runPrediction() {
+      const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
+      const buyPrice = getVal('buy');
+      const sellPrices = inputIds.map(getVal);
+      const prices = [buyPrice, buyPrice, ...sellPrices];
+      const isFirstBuy = document.getElementById('first_buy').checked;
+      const prevPattern = parseInt(document.getElementById('previous_pattern').value, 10);
+
+      try {
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
         const possibilities = predictor.analyze_possibilities();
 
         let output = `抽出パターン: ${possibilities.length}件\n\n`;
-        
         if (possibilities.length > 0) {
           possibilities.slice(0, 5).forEach((p, i) => {
             const prob = (p.category_total_probability * 100).toFixed(1);
@@ -116,7 +181,6 @@
         }
         document.getElementById('result').textContent = output;
 
-        // グラフデータ抽出
         const minPrices = Array(12).fill(999);
         const maxPrices = Array(12).fill(0);
         possibilities.forEach(p => {
@@ -142,7 +206,19 @@
       } catch (e) {
         document.getElementById('result').textContent = "エラーが発生しました: " + e.message;
       }
+    }
+
+    // イベントリスナー登録
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', saveState);
     });
+    document.getElementById('predictBtn').addEventListener('click', () => {
+      saveState();
+      runPrediction();
+    });
+
+    // 初期化
+    window.addEventListener('DOMContentLoaded', loadState);
   </script>
 </body>
 </html>
