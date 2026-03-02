@@ -73,7 +73,7 @@
 
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
-          <div id="futureBanner" class="hidden"></div>
+          <div id="futureBanner" style="display: none;"></div>
           <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">読み込み中...</pre>
         </section>
       </div>
@@ -218,9 +218,10 @@
 
     function runPrediction() {
       const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
-      const buyPrice = getVal('buy');
+      const buyPriceVal = getVal('buy');
+      const basePrice = isNaN(buyPriceVal) ? 100 : buyPriceVal; // NaN対策
       const sellPrices = inputIds.map(getVal);
-      const prices = [buyPrice, buyPrice, ...sellPrices];
+      const prices = [buyPriceVal, buyPriceVal, ...sellPrices];
       const isFirstBuy = document.getElementById('first_buy').checked;
       const prevPattern = parseInt(document.getElementById('previous_pattern').value, 10);
 
@@ -245,23 +246,25 @@
 
         if (possibilities.length > 0) {
           possibilities.forEach(p => {
-            totalProb += p.probability;
+            // probabilityがない場合のフェールセーフ
+            const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
+            totalProb += probWeight;
             
-            // 各パターンのピークを特定
             let peakIdx = 2;
             let peakAvg = 0;
             for (let i = 2; i <= 13; i++) {
               let avg = (p.prices[i].min + p.prices[i].max) / 2;
               if (avg > peakAvg) { peakAvg = avg; peakIdx = i; }
             }
-            // 未来のピークで、かつ買値より高い場合は「値上がり確率」に加算
-            if (peakIdx > lastInputIndex && p.prices[peakIdx].max > buyPrice) {
-              futureSpikeProb += p.probability;
+            
+            // 未来かつ買値以上のピーク
+            if (peakIdx > lastInputIndex && p.prices[peakIdx].max > basePrice) {
+              futureSpikeProb += probWeight;
             }
-            peakTimeProb[peakIdx] += p.probability;
+            peakTimeProb[peakIdx] += probWeight;
 
-            // グラフ描画用の抽出
-            if (p.probability > highestProb) { highestProb = p.probability; bestPossibility = p; }
+            // 最大確率のパターンの抽出
+            if (probWeight > highestProb) { highestProb = probWeight; bestPossibility = p; }
             p.prices.slice(2).forEach((pr, i) => {
               if (pr.min < minPrices[i]) minPrices[i] = pr.min;
               if (pr.max > maxPrices[i]) maxPrices[i] = pr.max;
@@ -276,35 +279,36 @@
           output = "該当パターンなし。入力値を確認してください。";
         }
         
-        // 値上がり確率バナーの生成
+        // バナーの表示ロジック
         const banner = document.getElementById('futureBanner');
         if (totalProb > 0) {
           let increasePercent = ((futureSpikeProb / totalProb) * 100).toFixed(1);
           let bestPeakIdx = 2;
-          let maxPeakProb = 0;
+          let maxPeakProb = -1;
           for (let i = 2; i <= 13; i++) {
             if (peakTimeProb[i] > maxPeakProb) { maxPeakProb = peakTimeProb[i]; bestPeakIdx = i; }
           }
           let peakLabel = labels[bestPeakIdx - 2];
 
-          banner.classList.remove('hidden');
+          banner.className = "mb-4 p-4 rounded-xl border shadow-sm"; // ベースクラス
           if (increasePercent >= 50) {
-            banner.className = "mb-4 p-4 rounded-xl border shadow-sm bg-green-50 border-green-200 text-green-800";
+            banner.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
             banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📈</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-green-100 ml-1">${peakLabel}</span></div>`;
           } else if (increasePercent > 0) {
-            banner.className = "mb-4 p-4 rounded-xl border shadow-sm bg-yellow-50 border-yellow-200 text-yellow-800";
+            banner.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-800');
             banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>🤔</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-yellow-100 ml-1">${peakLabel}</span></div>`;
           } else {
-            banner.className = "mb-4 p-4 rounded-xl border shadow-sm bg-red-50 border-red-200 text-red-800";
+            banner.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
             banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📉</span> 今後値上がりする確率: 0%</div><div class="text-sm mt-1">これ以上の値上がりは見込めません。今すぐ売却するか、他プレイヤーの島を頼ることを推奨します。</div>`;
           }
+          banner.style.display = 'block';
         } else {
-          banner.classList.add('hidden');
+          banner.style.display = 'none';
         }
 
         document.getElementById('result').textContent = output;
 
-        // グラフとテーブル描画
+        // グラフ描画
         const likelyPrices = Array(12).fill(null);
         if (bestPossibility) {
           bestPossibility.prices.slice(2).forEach((pr, i) => likelyPrices[i] = Math.floor((pr.min + pr.max) / 2));
@@ -325,6 +329,7 @@
           options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0 } } }
         });
 
+        // テーブル描画
         const tbody = document.getElementById('priceTableBody');
         if (possibilities.length > 0) {
           let trAM = '<tr>'; let trPM = '<tr class="bg-gray-50">';
@@ -336,7 +341,7 @@
             trAM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">AM</div><div class="font-medium">${amMin} ~ ${amMax}</div></td>`;
             trPM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">PM</div><div class="font-medium text-gray-700">${pmMin} ~ ${pmMax}</div></td>`;
           }
-          trAM += '</tr></tr>'; tbody.innerHTML = trAM + trPM;
+          trAM += '</tr>'; trPM += '</tr>'; tbody.innerHTML = trAM + trPM;
         } else {
           tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-gray-400">データがありません</td></tr>';
         }
