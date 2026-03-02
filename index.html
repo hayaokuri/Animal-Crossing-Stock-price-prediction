@@ -73,6 +73,7 @@
 
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
+          <div id="futureBanner" class="hidden"></div>
           <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">読み込み中...</pre>
         </section>
       </div>
@@ -173,30 +174,21 @@
     function applyUrlParams() {
       const params = new URLSearchParams(window.location.search);
       if (!params.has('b')) return false;
-
       if (params.has('pat')) document.getElementById('previous_pattern').value = params.get('pat');
       if (params.has('f')) document.getElementById('first_buy').checked = params.get('f') === '1';
       if (params.has('b')) document.getElementById('buy').value = params.get('b');
-      
       if (params.has('p')) {
         const pArray = params.get('p').split(',');
-        inputIds.forEach((id, i) => {
-          document.getElementById(id).value = pArray[i] || '';
-        });
+        inputIds.forEach((id, i) => { document.getElementById(id).value = pArray[i] || ''; });
       }
       return true;
     }
 
     function loadState() {
       highlightCurrentTime();
-      if (applyUrlParams()) {
-        runPrediction();
-        return;
-      }
-
+      if (applyUrlParams()) { runPrediction(); return; }
       const saved = localStorage.getItem('turnip_state');
       const currentWeekId = getACNHWeekId();
-      
       if (saved) {
         const state = JSON.parse(saved);
         if (state.weekId !== currentWeekId) {
@@ -236,8 +228,46 @@
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
         const possibilities = predictor.analyze_possibilities();
 
-        let output = `抽出パターン: ${possibilities.length}件\n\n`;
+        let output = `抽出パターン詳細: ${possibilities.length}件\n\n`;
+        let totalProb = 0;
+        let futureSpikeProb = 0;
+        let peakTimeProb = Array(14).fill(0);
+        
+        let lastInputIndex = 1;
+        inputIds.forEach((id, idx) => {
+          if (!isNaN(getVal(id))) lastInputIndex = idx + 2;
+        });
+
+        const minPrices = Array(12).fill(999);
+        const maxPrices = Array(12).fill(0);
+        let bestPossibility = null;
+        let highestProb = -1;
+
         if (possibilities.length > 0) {
+          possibilities.forEach(p => {
+            totalProb += p.probability;
+            
+            // 各パターンのピークを特定
+            let peakIdx = 2;
+            let peakAvg = 0;
+            for (let i = 2; i <= 13; i++) {
+              let avg = (p.prices[i].min + p.prices[i].max) / 2;
+              if (avg > peakAvg) { peakAvg = avg; peakIdx = i; }
+            }
+            // 未来のピークで、かつ買値より高い場合は「値上がり確率」に加算
+            if (peakIdx > lastInputIndex && p.prices[peakIdx].max > buyPrice) {
+              futureSpikeProb += p.probability;
+            }
+            peakTimeProb[peakIdx] += p.probability;
+
+            // グラフ描画用の抽出
+            if (p.probability > highestProb) { highestProb = p.probability; bestPossibility = p; }
+            p.prices.slice(2).forEach((pr, i) => {
+              if (pr.min < minPrices[i]) minPrices[i] = pr.min;
+              if (pr.max > maxPrices[i]) maxPrices[i] = pr.max;
+            });
+          });
+
           possibilities.slice(0, 5).forEach((p, i) => {
             const prob = (p.category_total_probability * 100).toFixed(1);
             output += `候補${i+1}: ${patternNames[p.pattern_number]} (${prob}%) 最大${p.weekMax}ベル\n`;
@@ -245,33 +275,39 @@
         } else {
           output = "該当パターンなし。入力値を確認してください。";
         }
+        
+        // 値上がり確率バナーの生成
+        const banner = document.getElementById('futureBanner');
+        if (totalProb > 0) {
+          let increasePercent = ((futureSpikeProb / totalProb) * 100).toFixed(1);
+          let bestPeakIdx = 2;
+          let maxPeakProb = 0;
+          for (let i = 2; i <= 13; i++) {
+            if (peakTimeProb[i] > maxPeakProb) { maxPeakProb = peakTimeProb[i]; bestPeakIdx = i; }
+          }
+          let peakLabel = labels[bestPeakIdx - 2];
+
+          banner.classList.remove('hidden');
+          if (increasePercent >= 50) {
+            banner.className = "mb-4 p-4 rounded-xl border shadow-sm bg-green-50 border-green-200 text-green-800";
+            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📈</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-green-100 ml-1">${peakLabel}</span></div>`;
+          } else if (increasePercent > 0) {
+            banner.className = "mb-4 p-4 rounded-xl border shadow-sm bg-yellow-50 border-yellow-200 text-yellow-800";
+            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>🤔</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-yellow-100 ml-1">${peakLabel}</span></div>`;
+          } else {
+            banner.className = "mb-4 p-4 rounded-xl border shadow-sm bg-red-50 border-red-200 text-red-800";
+            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📉</span> 今後値上がりする確率: 0%</div><div class="text-sm mt-1">これ以上の値上がりは見込めません。今すぐ売却するか、他プレイヤーの島を頼ることを推奨します。</div>`;
+          }
+        } else {
+          banner.classList.add('hidden');
+        }
+
         document.getElementById('result').textContent = output;
 
-        const minPrices = Array(12).fill(999);
-        const maxPrices = Array(12).fill(0);
-        
-        let bestPossibility = null;
-        let highestProb = -1;
-
-        possibilities.forEach(p => {
-          // 最も確率の高い単一のパターン推移を抽出
-          if (p.probability > highestProb) {
-            highestProb = p.probability;
-            bestPossibility = p;
-          }
-          // 最大・最小の抽出
-          p.prices.slice(2).forEach((pr, i) => {
-            if (pr.min < minPrices[i]) minPrices[i] = pr.min;
-            if (pr.max > maxPrices[i]) maxPrices[i] = pr.max;
-          });
-        });
-
-        // 最有力パターンの価格推移（平均値）を作成
+        // グラフとテーブル描画
         const likelyPrices = Array(12).fill(null);
         if (bestPossibility) {
-          bestPossibility.prices.slice(2).forEach((pr, i) => {
-            likelyPrices[i] = Math.floor((pr.min + pr.max) / 2);
-          });
+          bestPossibility.prices.slice(2).forEach((pr, i) => likelyPrices[i] = Math.floor((pr.min + pr.max) / 2));
         }
 
         const ctx = document.getElementById('priceChart').getContext('2d');
@@ -291,8 +327,7 @@
 
         const tbody = document.getElementById('priceTableBody');
         if (possibilities.length > 0) {
-          let trAM = '<tr>';
-          let trPM = '<tr class="bg-gray-50">';
+          let trAM = '<tr>'; let trPM = '<tr class="bg-gray-50">';
           for (let i = 0; i < 6; i++) {
             const amMin = minPrices[i * 2] === 999 ? '-' : minPrices[i * 2];
             const amMax = maxPrices[i * 2] === 0 ? '-' : maxPrices[i * 2];
@@ -301,8 +336,7 @@
             trAM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">AM</div><div class="font-medium">${amMin} ~ ${amMax}</div></td>`;
             trPM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">PM</div><div class="font-medium text-gray-700">${pmMin} ~ ${pmMax}</div></td>`;
           }
-          trAM += '</tr></tr>';
-          tbody.innerHTML = trAM + trPM;
+          trAM += '</tr></tr>'; tbody.innerHTML = trAM + trPM;
         } else {
           tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-gray-400">データがありません</td></tr>';
         }
@@ -318,21 +352,17 @@
       const p = inputIds.map(id => document.getElementById(id).value).join(',');
       
       const url = new URL(window.location.href.split('?')[0]);
-      url.searchParams.set('pat', pat);
-      url.searchParams.set('f', f);
-      url.searchParams.set('b', b);
-      url.searchParams.set('p', p);
+      url.searchParams.set('pat', pat); url.searchParams.set('f', f);
+      url.searchParams.set('b', b); url.searchParams.set('p', p);
       
       navigator.clipboard.writeText(url.toString()).then(() => {
         const btn = document.getElementById('shareBtn');
         const originalText = btn.textContent;
         btn.textContent = 'コピーしました！';
-        btn.classList.replace('bg-gray-200', 'bg-kabu-light');
-        btn.classList.replace('text-gray-700', 'text-white');
+        btn.classList.replace('bg-gray-200', 'bg-kabu-light'); btn.classList.replace('text-gray-700', 'text-white');
         setTimeout(() => {
           btn.textContent = originalText;
-          btn.classList.replace('bg-kabu-light', 'bg-gray-200');
-          btn.classList.replace('text-white', 'text-gray-700');
+          btn.classList.replace('bg-kabu-light', 'bg-gray-200'); btn.classList.replace('text-white', 'text-gray-700');
         }, 2000);
       });
     });
