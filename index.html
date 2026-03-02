@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>カブ価予測ツールPro</title>
+  <title>M2k! あつ森 株価予想</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/gh/mikebryant/ac-nh-turnip-prices/js/predictions.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -14,7 +14,7 @@
 <body class="bg-gray-50 text-gray-900 font-sans">
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="text-center mb-10">
-      <h1 class="text-3xl font-extrabold text-kabu flex items-center justify-center gap-2">カブ価予測ツールPro</h1>
+      <h1 class="text-3xl font-extrabold text-kabu flex items-center justify-center gap-2">M2k! あつ森 株価予想</h1>
     </header>
 
     <main class="grid grid-cols-1 xl:grid-cols-3 xl:gap-8">
@@ -77,6 +77,18 @@
         </section>
       </div>
     </main>
+
+    <footer class="mt-12 mb-8 text-center text-gray-500 text-sm border-t border-gray-200 pt-8">
+      <div class="mb-4">
+        <p>Reference / Special Thanks:</p>
+        <div class="flex justify-center gap-4 mt-2">
+          <a href="https://gist.github.com/Treeki/85be14d297c80c8b3c0a76375743325b" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">Treeki (C++ Algorithm Analysis)</a>
+          <span class="text-gray-300">|</span>
+          <a href="https://github.com/mikebryant/ac-nh-turnip-prices" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">mikebryant (Turnip Prophet)</a>
+        </div>
+      </div>
+      <p class="font-bold text-gray-600">&copy; 2026 M2k!</p>
+    </footer>
   </div>
 
   <script>
@@ -85,7 +97,6 @@
     const inputIds = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'];
     let chartInstance = null;
 
-    // ACNH基準の週IDを取得（日曜AM5:00切り替え）
     function getACNHWeekId() {
       const d = new Date();
       d.setHours(d.getHours() - 5);
@@ -94,7 +105,6 @@
       return `${sunday.getFullYear()}-${sunday.getMonth()}-${sunday.getDate()}`;
     }
 
-    // 最も確率の高いパターンを算出
     function getBestPattern(prices, isFirstBuy, prevPattern) {
       try {
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
@@ -112,7 +122,6 @@
       } catch (e) { return -1; }
     }
 
-    // 状態の保存
     function saveState() {
       const state = {
         weekId: getACNHWeekId(),
@@ -124,7 +133,6 @@
       localStorage.setItem('turnip_state', JSON.stringify(state));
     }
 
-    // 状態の復元と週替わり処理
     function loadState() {
       const saved = localStorage.getItem('turnip_state');
       const currentWeekId = getACNHWeekId();
@@ -132,7 +140,6 @@
       if (saved) {
         const state = JSON.parse(saved);
         if (state.weekId !== currentWeekId) {
-          // 新しい週の場合：前週データからパターンを解析して自動入力
           const oldPrices = [state.buy, state.buy, ...state.sells];
           const bestPattern = getBestPattern(oldPrices, state.first, state.prev);
           
@@ -145,7 +152,6 @@
           document.getElementById('result').textContent = `新しい週になりました。\n先週のデータから前回パターンを「${pName}」と自動設定しました。`;
           saveState();
         } else {
-          // 同じ週の場合：入力状態を復元
           document.getElementById('previous_pattern').value = state.prev;
           document.getElementById('first_buy').checked = state.first;
           document.getElementById('buy').value = state.buy || 100;
@@ -157,7 +163,6 @@
       }
     }
 
-    // 予測の実行と描画
     function runPrediction() {
       const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
       const buyPrice = getVal('buy');
@@ -208,7 +213,6 @@
       }
     }
 
-    // イベントリスナー登録
     document.querySelectorAll('input, select').forEach(el => {
       el.addEventListener('change', saveState);
     });
@@ -217,7 +221,6 @@
       runPrediction();
     });
 
-    // 初期化
     window.addEventListener('DOMContentLoaded', loadState);
   </script>
 </body>
