@@ -22,7 +22,7 @@
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h2 class="text-xl font-bold mb-5 flex items-center justify-between">
             <span>価格を入力</span>
-            <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">黄色は現在の時間帯</span>
+            <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">黄色は現在時刻</span>
           </h2>
           <div class="space-y-4">
             <div class="bg-kabu/5 p-4 rounded-xl border border-kabu/20 space-y-3">
@@ -170,7 +170,6 @@
       localStorage.setItem('turnip_state', JSON.stringify(state));
     }
 
-    // URL共有パラメータの適用処理
     function applyUrlParams() {
       const params = new URLSearchParams(window.location.search);
       if (!params.has('b')) return false;
@@ -190,8 +189,6 @@
 
     function loadState() {
       highlightCurrentTime();
-      
-      // URLにパラメータがあれば優先的に読み込む
       if (applyUrlParams()) {
         runPrediction();
         return;
@@ -252,12 +249,30 @@
 
         const minPrices = Array(12).fill(999);
         const maxPrices = Array(12).fill(0);
+        
+        let bestPossibility = null;
+        let highestProb = -1;
+
         possibilities.forEach(p => {
+          // 最も確率の高い単一のパターン推移を抽出
+          if (p.probability > highestProb) {
+            highestProb = p.probability;
+            bestPossibility = p;
+          }
+          // 最大・最小の抽出
           p.prices.slice(2).forEach((pr, i) => {
             if (pr.min < minPrices[i]) minPrices[i] = pr.min;
             if (pr.max > maxPrices[i]) maxPrices[i] = pr.max;
           });
         });
+
+        // 最有力パターンの価格推移（平均値）を作成
+        const likelyPrices = Array(12).fill(null);
+        if (bestPossibility) {
+          bestPossibility.prices.slice(2).forEach((pr, i) => {
+            likelyPrices[i] = Math.floor((pr.min + pr.max) / 2);
+          });
+        }
 
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
@@ -266,8 +281,9 @@
           data: {
             labels: labels,
             datasets: [
-              { label: '最大予測', data: maxPrices, borderColor: '#61A056', backgroundColor: 'rgba(97, 160, 86, 0.1)', fill: '+1', tension: 0.1 },
-              { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.1 }
+              { label: '最大予測', data: maxPrices, borderColor: '#61A056', backgroundColor: 'rgba(97, 160, 86, 0.1)', fill: 2, tension: 0.1, pointRadius: 3 },
+              { label: '最有力推移 (中央値)', data: likelyPrices, borderColor: '#3B82F6', borderDash: [5, 5], fill: false, tension: 0.1, pointBackgroundColor: '#3B82F6', pointRadius: 4 },
+              { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.1, pointRadius: 3 }
             ]
           },
           options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0 } } }
@@ -295,7 +311,6 @@
       }
     }
 
-    // URL共有ボタンの処理
     document.getElementById('shareBtn').addEventListener('click', () => {
       const pat = document.getElementById('previous_pattern').value;
       const f = document.getElementById('first_buy').checked ? 1 : 0;
