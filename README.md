@@ -1,1 +1,1 @@
-# Animal-Crossing-Stock-price-prediction
+あつ森　株価予測
