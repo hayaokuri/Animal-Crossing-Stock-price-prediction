@@ -64,12 +64,16 @@
               </script>
             </div>
           </div>
-          <button id="predictBtn" class="w-full mt-6 bg-kabu text-white font-bold py-3 rounded-xl shadow hover:bg-kabu-light transition">予測を実行する</button>
+          
+          <div class="flex gap-3 mt-6">
+            <button id="predictBtn" class="flex-1 bg-kabu text-white font-bold py-3 rounded-xl shadow hover:bg-kabu-light transition">予測実行</button>
+            <button id="shareBtn" class="flex-none bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl shadow hover:bg-gray-300 transition text-sm">共有リンク</button>
+          </div>
         </section>
 
         <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
-          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">自動保存データを読み込み中...</pre>
+          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">読み込み中...</pre>
         </section>
       </div>
 
@@ -103,9 +107,9 @@
       <div class="mb-4">
         <p>Reference / Special Thanks:</p>
         <div class="flex justify-center gap-4 mt-2">
-          <a href="https://gist.github.com/Treeki/85be14d297c80c8b3c0a76375743325b" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">Treeki (C++ Algorithm Analysis)</a>
+          <a href="https://gist.github.com/Treeki/85be14d297c80c8b3c0a76375743325b" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">Treeki</a>
           <span class="text-gray-300">|</span>
-          <a href="https://github.com/mikebryant/ac-nh-turnip-prices" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">mikebryant (Turnip Prophet)</a>
+          <a href="https://github.com/mikebryant/ac-nh-turnip-prices" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">mikebryant</a>
         </div>
       </div>
       <p class="font-bold text-gray-600">&copy; 2026 あつ森株価予想</p>
@@ -118,27 +122,18 @@
     const inputIds = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'];
     let chartInstance = null;
 
-    // 現在日時のハイライト処理
     function highlightCurrentTime() {
       const d = new Date();
-      const day = d.getDay(); // 0=Sun, 1=Mon...6=Sat
+      const day = d.getDay();
       const hour = d.getHours();
-
-      // 一旦すべてのハイライトをクリア
       document.getElementById('container_buy').classList.remove('bg-active-time', 'border-yellow-400');
-      inputIds.forEach(id => {
-        document.getElementById(id).classList.remove('bg-active-time', 'border-yellow-400');
-      });
-
+      inputIds.forEach(id => document.getElementById(id).classList.remove('bg-active-time', 'border-yellow-400'));
       if (day === 0) {
-        // 日曜日の場合
         document.getElementById('container_buy').classList.add('bg-active-time', 'border-yellow-400');
       } else {
-        // 月〜土の場合 (AM: 0-11, PM: 12-23)
         const ampm = hour < 12 ? '1' : '2';
         const dayPrefix = ['m', 'tu', 'w', 'th', 'f', 'sa'][day - 1];
-        const targetId = dayPrefix + ampm;
-        const targetEl = document.getElementById(targetId);
+        const targetEl = document.getElementById(dayPrefix + ampm);
         if (targetEl) targetEl.classList.add('bg-active-time', 'border-yellow-400');
       }
     }
@@ -168,22 +163,48 @@
       const state = {
         weekId: getACNHWeekId(),
         buy: parseInt(document.getElementById('buy').value, 10) || 100,
-        sells: inputIds.map(id => parseInt(document.getElementById(id).value, 10) || NaN),
+        sells: inputIds.map(id => document.getElementById(id).value),
         prev: parseInt(document.getElementById('previous_pattern').value, 10),
         first: document.getElementById('first_buy').checked
       };
       localStorage.setItem('turnip_state', JSON.stringify(state));
     }
 
+    // URL共有パラメータの適用処理
+    function applyUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      if (!params.has('b')) return false;
+
+      if (params.has('pat')) document.getElementById('previous_pattern').value = params.get('pat');
+      if (params.has('f')) document.getElementById('first_buy').checked = params.get('f') === '1';
+      if (params.has('b')) document.getElementById('buy').value = params.get('b');
+      
+      if (params.has('p')) {
+        const pArray = params.get('p').split(',');
+        inputIds.forEach((id, i) => {
+          document.getElementById(id).value = pArray[i] || '';
+        });
+      }
+      return true;
+    }
+
     function loadState() {
       highlightCurrentTime();
+      
+      // URLにパラメータがあれば優先的に読み込む
+      if (applyUrlParams()) {
+        runPrediction();
+        return;
+      }
+
       const saved = localStorage.getItem('turnip_state');
       const currentWeekId = getACNHWeekId();
       
       if (saved) {
         const state = JSON.parse(saved);
         if (state.weekId !== currentWeekId) {
-          const oldPrices = [state.buy, state.buy, ...state.sells];
+          const numericSells = state.sells.map(v => parseInt(v, 10) || NaN);
+          const oldPrices = [state.buy, state.buy, ...numericSells];
           const bestPattern = getBestPattern(oldPrices, state.first, state.prev);
           
           document.getElementById('previous_pattern').value = bestPattern;
@@ -198,7 +219,7 @@
           document.getElementById('previous_pattern').value = state.prev;
           document.getElementById('first_buy').checked = state.first;
           document.getElementById('buy').value = state.buy || 100;
-          inputIds.forEach((id, i) => document.getElementById(id).value = isNaN(state.sells[i]) ? '' : state.sells[i]);
+          inputIds.forEach((id, i) => document.getElementById(id).value = state.sells[i] || '');
           runPrediction();
         }
       } else {
@@ -238,7 +259,6 @@
           });
         });
 
-        // グラフ描画
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         chartInstance = new Chart(ctx, {
@@ -253,7 +273,6 @@
           options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0 } } }
         });
 
-        // テーブル描画
         const tbody = document.getElementById('priceTableBody');
         if (possibilities.length > 0) {
           let trAM = '<tr>';
@@ -263,21 +282,45 @@
             const amMax = maxPrices[i * 2] === 0 ? '-' : maxPrices[i * 2];
             const pmMin = minPrices[i * 2 + 1] === 999 ? '-' : minPrices[i * 2 + 1];
             const pmMax = maxPrices[i * 2 + 1] === 0 ? '-' : maxPrices[i * 2 + 1];
-            
             trAM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">AM</div><div class="font-medium">${amMin} ~ ${amMax}</div></td>`;
             trPM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">PM</div><div class="font-medium text-gray-700">${pmMin} ~ ${pmMax}</div></td>`;
           }
-          trAM += '</tr>';
-          trPM += '</tr>';
+          trAM += '</tr></tr>';
           tbody.innerHTML = trAM + trPM;
         } else {
           tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-gray-400">データがありません</td></tr>';
         }
-
       } catch (e) {
         document.getElementById('result').textContent = "エラーが発生しました: " + e.message;
       }
     }
+
+    // URL共有ボタンの処理
+    document.getElementById('shareBtn').addEventListener('click', () => {
+      const pat = document.getElementById('previous_pattern').value;
+      const f = document.getElementById('first_buy').checked ? 1 : 0;
+      const b = document.getElementById('buy').value;
+      const p = inputIds.map(id => document.getElementById(id).value).join(',');
+      
+      const url = new URL(window.location.href.split('?')[0]);
+      url.searchParams.set('pat', pat);
+      url.searchParams.set('f', f);
+      url.searchParams.set('b', b);
+      url.searchParams.set('p', p);
+      
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        const btn = document.getElementById('shareBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'コピーしました！';
+        btn.classList.replace('bg-gray-200', 'bg-kabu-light');
+        btn.classList.replace('text-gray-700', 'text-white');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.replace('bg-kabu-light', 'bg-gray-200');
+          btn.classList.replace('text-white', 'text-gray-700');
+        }, 2000);
+      });
+    });
 
     document.querySelectorAll('input, select').forEach(el => {
       el.addEventListener('change', () => { saveState(); runPrediction(); });
