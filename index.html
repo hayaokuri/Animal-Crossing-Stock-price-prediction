@@ -12,14 +12,15 @@
   </script>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
+  <div class="container mx-auto px-4 py-8 max-w-[1440px]">
     <header class="text-center mb-10">
       <h1 class="text-3xl font-extrabold text-kabu flex items-center justify-center gap-2">あつ森株価予想</h1>
     </header>
 
-    <main class="grid grid-cols-1 xl:grid-cols-3 xl:gap-8">
+    <main class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
+      
       <div class="xl:col-span-1 space-y-6">
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
           <h2 class="text-xl font-bold mb-5 flex items-center justify-between">
             <span>価格を入力</span>
             <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">黄色は現在時刻</span>
@@ -70,12 +71,6 @@
             <button id="shareBtn" class="flex-none bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl shadow hover:bg-gray-300 transition text-sm">共有リンク</button>
           </div>
         </section>
-
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
-          <div id="futureBanner" style="display: none;"></div>
-          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">読み込み中...</pre>
-        </section>
       </div>
 
       <div class="xl:col-span-2 space-y-6">
@@ -102,6 +97,15 @@
           </div>
         </section>
       </div>
+
+      <div class="xl:col-span-1 space-y-6">
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
+          <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
+          <div id="futureBanner" style="display: none;"></div>
+          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">読み込み中...</pre>
+        </section>
+      </div>
+
     </main>
 
     <footer class="mt-12 mb-8 text-center text-gray-500 text-sm border-t border-gray-200 pt-8">
@@ -219,7 +223,7 @@
     function runPrediction() {
       const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
       const buyPriceVal = getVal('buy');
-      const basePrice = isNaN(buyPriceVal) ? 100 : buyPriceVal; // NaN対策
+      const basePrice = isNaN(buyPriceVal) ? 100 : buyPriceVal;
       const sellPrices = inputIds.map(getVal);
       const prices = [buyPriceVal, buyPriceVal, ...sellPrices];
       const isFirstBuy = document.getElementById('first_buy').checked;
@@ -246,7 +250,6 @@
 
         if (possibilities.length > 0) {
           possibilities.forEach(p => {
-            // probabilityがない場合のフェールセーフ
             const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
             totalProb += probWeight;
             
@@ -257,13 +260,11 @@
               if (avg > peakAvg) { peakAvg = avg; peakIdx = i; }
             }
             
-            // 未来かつ買値以上のピーク
             if (peakIdx > lastInputIndex && p.prices[peakIdx].max > basePrice) {
               futureSpikeProb += probWeight;
             }
             peakTimeProb[peakIdx] += probWeight;
 
-            // 最大確率のパターンの抽出
             if (probWeight > highestProb) { highestProb = probWeight; bestPossibility = p; }
             p.prices.slice(2).forEach((pr, i) => {
               if (pr.min < minPrices[i]) minPrices[i] = pr.min;
@@ -279,7 +280,6 @@
           output = "該当パターンなし。入力値を確認してください。";
         }
         
-        // バナーの表示ロジック
         const banner = document.getElementById('futureBanner');
         if (totalProb > 0) {
           let increasePercent = ((futureSpikeProb / totalProb) * 100).toFixed(1);
@@ -290,7 +290,7 @@
           }
           let peakLabel = labels[bestPeakIdx - 2];
 
-          banner.className = "mb-4 p-4 rounded-xl border shadow-sm"; // ベースクラス
+          banner.className = "mb-4 p-4 rounded-xl border shadow-sm"; 
           if (increasePercent >= 50) {
             banner.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
             banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📈</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-green-100 ml-1">${peakLabel}</span></div>`;
@@ -308,7 +308,6 @@
 
         document.getElementById('result').textContent = output;
 
-        // グラフ描画
         const likelyPrices = Array(12).fill(null);
         if (bestPossibility) {
           bestPossibility.prices.slice(2).forEach((pr, i) => likelyPrices[i] = Math.floor((pr.min + pr.max) / 2));
@@ -329,7 +328,6 @@
           options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0 } } }
         });
 
-        // テーブル描画
         const tbody = document.getElementById('priceTableBody');
         if (possibilities.length > 0) {
           let trAM = '<tr>'; let trPM = '<tr class="bg-gray-50">';
