@@ -1,6 +1,7 @@
 # あつ森株価予想
 
 あつまれ どうぶつの森（ACNH）のカブ価推移予測ツールです。
+
 https://hayaokuri.github.io/Animal-Crossing-Stock-price-prediction/
 
 ## 機能
