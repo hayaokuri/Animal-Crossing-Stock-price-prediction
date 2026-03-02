@@ -8,28 +8,56 @@
   <script src="https://cdn.jsdelivr.net/gh/mikebryant/ac-nh-turnip-prices/js/predictions.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    tailwind.config = { theme: { extend: { colors: { kabu: '#61A056', 'kabu-light': '#8BCB7B', 'active-time': '#FEF08A' } } } }
+    tailwind.config = { 
+      theme: { 
+        extend: { 
+          colors: { 
+            nook: {
+              green: '#82C87A',   // 柔らかい緑
+              leaf: '#5D9B55',    // 濃いアクセント緑
+              bg: '#F7FAF3',      // 背景の薄いクリーム緑
+              brown: '#7A5C43',   // ウッド調のテキスト色
+              light: '#DDF0D9',   // 境界線や薄い背景用
+              card: '#FFFFFF'
+            },
+            'active-time': '#FEF08A' 
+          },
+          fontFamily: {
+            'maru': ['"Hiragino Maru Gothic ProN"', '"Rounded M+ 1c"', '"YuGothic"', '"Yu Gothic"', 'sans-serif']
+          }
+        } 
+      } 
+    }
   </script>
+  <style>
+    /* 追加の微調整スタイル */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans">
+<body class="bg-nook-bg text-nook-brown font-maru">
   <div class="container mx-auto px-4 py-8 max-w-[1440px]">
+    
     <header class="text-center mb-10">
-      <h1 class="text-3xl font-extrabold text-kabu flex items-center justify-center gap-2">あつ森株価予想</h1>
+      <h1 class="text-3xl md:text-4xl font-extrabold text-nook-leaf flex items-center justify-center gap-2 drop-shadow-sm">
+        <span>🌿</span> あつ森株価予想
+      </h1>
     </header>
 
     <main class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
       
       <div class="xl:col-span-1 space-y-6">
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
-          <h2 class="text-xl font-bold mb-5 flex items-center justify-between">
+        <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light h-full">
+          <h2 class="text-xl font-bold mb-5 flex items-center justify-between text-nook-brown">
             <span>価格を入力</span>
-            <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">黄色は現在時刻</span>
+            <span class="text-xs font-bold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full shadow-sm">黄色は現在時刻</span>
           </h2>
-          <div class="space-y-4">
-            <div class="bg-kabu/5 p-4 rounded-xl border border-kabu/20 space-y-3">
+          
+          <div class="space-y-5">
+            <div class="bg-nook-bg p-4 rounded-2xl border border-nook-light space-y-3">
               <div>
-                <label class="block text-sm font-semibold text-kabu mb-1">先週のパターン</label>
-                <select id="previous_pattern" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-kabu/50 outline-none">
+                <label class="block text-sm font-bold text-nook-leaf mb-1">先週のパターン</label>
+                <select id="previous_pattern" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-nook-green/50 focus:border-nook-green outline-none text-gray-700 bg-white shadow-inner transition">
                   <option value="-1">わからない</option>
                   <option value="0">波型</option>
                   <option value="1">大跳ね型</option>
@@ -37,15 +65,15 @@
                   <option value="3">小跳ね型</option>
                 </select>
               </div>
-              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <input type="checkbox" id="first_buy" class="rounded text-kabu focus:ring-kabu h-4 w-4">
+              <label class="flex items-center gap-2 text-sm font-bold text-gray-700 cursor-pointer pt-1">
+                <input type="checkbox" id="first_buy" class="rounded text-nook-green focus:ring-nook-green h-5 w-5 border-gray-300">
                 今回が初めてのカブ購入
               </label>
             </div>
 
-            <div class="p-4 rounded-xl border border-gray-200 transition-colors" id="container_buy">
-              <label class="block text-sm font-semibold text-gray-700 mb-1">日曜の買値</label>
-              <input type="number" id="buy" value="100" class="w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none">
+            <div class="p-4 rounded-2xl border-2 border-transparent bg-gray-50 transition-colors duration-300" id="container_buy">
+              <label class="block text-sm font-bold text-gray-700 mb-2">日曜の買値</label>
+              <input type="number" id="buy" value="100" class="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-nook-green/50 outline-none shadow-inner text-gray-700 text-lg font-bold">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -53,11 +81,11 @@
                 const days = [ { id: 'm', l: '月曜' }, { id: 'tu', l: '火曜' }, { id: 'w', l: '水曜' }, { id: 'th', l: '木曜' }, { id: 'f', l: '金曜' }, { id: 'sa', l: '土曜' } ];
                 days.forEach(d => {
                   document.write(`
-                    <div>
-                      <label class="block text-xs font-medium text-gray-500 mb-1">${d.l}</label>
-                      <div class="space-y-1">
-                        <input type="number" id="${d.id}1" placeholder="AM" class="w-full px-2 py-1 border rounded outline-none text-sm transition-colors">
-                        <input type="number" id="${d.id}2" placeholder="PM" class="w-full px-2 py-1 border rounded outline-none text-sm transition-colors">
+                    <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm">
+                      <label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">${d.l}</label>
+                      <div class="space-y-1.5">
+                        <input type="number" id="${d.id}1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green">
+                        <input type="number" id="${d.id}2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green">
                       </div>
                     </div>
                   `);
@@ -66,32 +94,32 @@
             </div>
           </div>
           
-          <div class="flex gap-3 mt-6">
-            <button id="predictBtn" class="flex-1 bg-kabu text-white font-bold py-3 rounded-xl shadow hover:bg-kabu-light transition">予測実行</button>
-            <button id="shareBtn" class="flex-none bg-gray-200 text-gray-700 font-bold py-3 px-4 rounded-xl shadow hover:bg-gray-300 transition text-sm">共有リンク</button>
+          <div class="flex gap-3 mt-7">
+            <button id="predictBtn" class="flex-1 bg-nook-green text-white font-bold py-3.5 rounded-2xl shadow-md hover:bg-nook-leaf hover:-translate-y-0.5 transform transition duration-200 text-lg">予測実行</button>
+            <button id="shareBtn" class="flex-none bg-white border-2 border-nook-green text-nook-leaf font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-nook-bg transition duration-200 text-sm flex items-center justify-center">共有</button>
           </div>
         </section>
       </div>
 
       <div class="xl:col-span-2 space-y-6">
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 class="text-xl font-bold mb-6">価格推移予測グラフ</h2>
+        <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light">
+          <h2 class="text-xl font-bold mb-6 text-nook-brown">価格推移予測グラフ</h2>
           <div class="relative h-[300px] md:h-[400px]"><canvas id="priceChart"></canvas></div>
         </section>
 
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 class="text-xl font-bold mb-4">予測詳細テーブル</h2>
-          <div class="overflow-x-auto">
+        <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light">
+          <h2 class="text-xl font-bold mb-5 text-nook-brown">予測詳細テーブル</h2>
+          <div class="overflow-x-auto rounded-xl border border-nook-light">
             <table class="w-full text-sm text-center border-collapse">
               <thead>
-                <tr class="bg-gray-100 border-b border-gray-200">
-                  <th class="p-2 font-semibold text-gray-600">月</th><th class="p-2 font-semibold text-gray-600">火</th>
-                  <th class="p-2 font-semibold text-gray-600">水</th><th class="p-2 font-semibold text-gray-600">木</th>
-                  <th class="p-2 font-semibold text-gray-600">金</th><th class="p-2 font-semibold text-gray-600">土</th>
+                <tr class="bg-nook-bg border-b border-nook-light">
+                  <th class="p-3 font-bold text-nook-brown">月</th><th class="p-3 font-bold text-nook-brown">火</th>
+                  <th class="p-3 font-bold text-nook-brown">水</th><th class="p-3 font-bold text-nook-brown">木</th>
+                  <th class="p-3 font-bold text-nook-brown">金</th><th class="p-3 font-bold text-nook-brown">土</th>
                 </tr>
               </thead>
-              <tbody id="priceTableBody" class="divide-y divide-gray-100">
-                <tr><td colspan="6" class="p-4 text-gray-400">データがありません</td></tr>
+              <tbody id="priceTableBody" class="divide-y divide-gray-100 bg-white">
+                <tr><td colspan="6" class="p-6 text-gray-400">データがありません</td></tr>
               </tbody>
             </table>
           </div>
@@ -99,25 +127,29 @@
       </div>
 
       <div class="xl:col-span-1 space-y-6">
-        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-full">
-          <h2 class="text-xl font-bold mb-4">推測されるパターン</h2>
-          <div id="futureBanner" style="display: none;"></div>
-          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-sm font-mono whitespace-pre-wrap border border-gray-200">読み込み中...</pre>
+        <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light h-full">
+          <h2 class="text-xl font-bold mb-5 text-nook-brown">推測されるパターン</h2>
+          
+          <div id="futureBanner" style="display: none;" class="mb-6 p-4 rounded-2xl border-2 shadow-sm transition-all duration-300"></div>
+          
+          <div id="result">
+            <div class="text-gray-400 p-4 text-center text-sm bg-gray-50 rounded-xl border border-gray-100">読み込み中...</div>
+          </div>
         </section>
       </div>
 
     </main>
 
-    <footer class="mt-12 mb-8 text-center text-gray-500 text-sm border-t border-gray-200 pt-8">
+    <footer class="mt-16 mb-8 text-center text-nook-brown/60 text-sm pt-8 border-t-2 border-nook-light/50">
       <div class="mb-4">
-        <p>Reference / Special Thanks:</p>
+        <p class="font-bold">Reference / Special Thanks:</p>
         <div class="flex justify-center gap-4 mt-2">
-          <a href="https://gist.github.com/Treeki/85be14d297c80c8b3c0a76375743325b" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">Treeki</a>
+          <a href="https://gist.github.com/Treeki/85be14d297c80c8b3c0a76375743325b" target="_blank" rel="noopener noreferrer" class="hover:text-nook-leaf transition">Treeki</a>
           <span class="text-gray-300">|</span>
-          <a href="https://github.com/mikebryant/ac-nh-turnip-prices" target="_blank" rel="noopener noreferrer" class="text-kabu hover:underline">mikebryant</a>
+          <a href="https://github.com/mikebryant/ac-nh-turnip-prices" target="_blank" rel="noopener noreferrer" class="hover:text-nook-leaf transition">mikebryant</a>
         </div>
       </div>
-      <p class="font-bold text-gray-600">&copy; 2026 あつ森株価予想</p>
+      <p class="font-extrabold">&copy; 2026 あつ森株価予想</p>
     </footer>
   </div>
 
@@ -127,19 +159,24 @@
     const inputIds = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'];
     let chartInstance = null;
 
+    // --- 現在時刻のハイライト（背景色を黄色系に変更） ---
     function highlightCurrentTime() {
       const d = new Date();
       const day = d.getDay();
       const hour = d.getHours();
-      document.getElementById('container_buy').classList.remove('bg-active-time', 'border-yellow-400');
-      inputIds.forEach(id => document.getElementById(id).classList.remove('bg-active-time', 'border-yellow-400'));
+      
+      document.getElementById('container_buy').classList.remove('bg-yellow-100', 'border-yellow-400');
+      inputIds.forEach(id => {
+        document.getElementById(id).classList.remove('bg-yellow-100', 'border-yellow-400');
+      });
+      
       if (day === 0) {
-        document.getElementById('container_buy').classList.add('bg-active-time', 'border-yellow-400');
+        document.getElementById('container_buy').classList.add('bg-yellow-100', 'border-yellow-400');
       } else {
         const ampm = hour < 12 ? '1' : '2';
         const dayPrefix = ['m', 'tu', 'w', 'th', 'f', 'sa'][day - 1];
         const targetEl = document.getElementById(dayPrefix + ampm);
-        if (targetEl) targetEl.classList.add('bg-active-time', 'border-yellow-400');
+        if (targetEl) targetEl.classList.add('bg-yellow-100', 'border-yellow-400');
       }
     }
 
@@ -191,8 +228,10 @@
     function loadState() {
       highlightCurrentTime();
       if (applyUrlParams()) { runPrediction(); return; }
+      
       const saved = localStorage.getItem('turnip_state');
       const currentWeekId = getACNHWeekId();
+      
       if (saved) {
         const state = JSON.parse(saved);
         if (state.weekId !== currentWeekId) {
@@ -206,7 +245,7 @@
           inputIds.forEach(id => document.getElementById(id).value = '');
           
           const pName = bestPattern >= 0 ? patternNames[bestPattern] : '不明';
-          document.getElementById('result').textContent = `新しい週になりました。\n先週のデータから前回パターンを「${pName}」と設定しました。`;
+          document.getElementById('result').innerHTML = `<div class="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm">新しい週になりました。<br>先週のデータから前回パターンを「<b>${pName}</b>」と設定しました。</div>`;
           saveState();
         } else {
           document.getElementById('previous_pattern').value = state.prev;
@@ -216,7 +255,7 @@
           runPrediction();
         }
       } else {
-        document.getElementById('result').textContent = "数値を入力して予測を実行してください。";
+        document.getElementById('result').innerHTML = `<div class="text-gray-400 p-4 text-center text-sm bg-gray-50 rounded-xl border border-gray-100">数値を入力して<br>予測を実行してください</div>`;
       }
     }
 
@@ -233,7 +272,6 @@
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
         const possibilities = predictor.analyze_possibilities();
 
-        let output = `抽出パターン詳細: ${possibilities.length}件\n\n`;
         let totalProb = 0;
         let futureSpikeProb = 0;
         let peakTimeProb = Array(14).fill(0);
@@ -248,23 +286,41 @@
         let bestPossibility = null;
         let highestProb = -1;
 
+        // パターン集約用グループ
+        const groupStats = [
+          { name: "波型", prob: 0, max: 0 },
+          { name: "大跳ね型", prob: 0, max: 0 },
+          { name: "減少型", prob: 0, max: 0 },
+          { name: "小跳ね型", prob: 0, max: 0 }
+        ];
+
         if (possibilities.length > 0) {
           possibilities.forEach(p => {
+            // 確率がない場合のフェールセーフ
             const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
             totalProb += probWeight;
             
+            // パターン別集計（NaN防ぎ）
+            if (p.pattern_number !== undefined && p.pattern_number >= 0 && p.pattern_number <= 3) {
+              groupStats[p.pattern_number].prob += probWeight;
+              if (p.weekMax > groupStats[p.pattern_number].max) {
+                groupStats[p.pattern_number].max = p.weekMax;
+              }
+            }
+            
+            // ピーク日時の集計
             let peakIdx = 2;
             let peakAvg = 0;
             for (let i = 2; i <= 13; i++) {
               let avg = (p.prices[i].min + p.prices[i].max) / 2;
               if (avg > peakAvg) { peakAvg = avg; peakIdx = i; }
             }
-            
             if (peakIdx > lastInputIndex && p.prices[peakIdx].max > basePrice) {
               futureSpikeProb += probWeight;
             }
             peakTimeProb[peakIdx] += probWeight;
 
+            // グラフ用の最大最小
             if (probWeight > highestProb) { highestProb = probWeight; bestPossibility = p; }
             p.prices.slice(2).forEach((pr, i) => {
               if (pr.min < minPrices[i]) minPrices[i] = pr.min;
@@ -272,14 +328,38 @@
             });
           });
 
-          possibilities.slice(0, 5).forEach((p, i) => {
-            const prob = (p.category_total_probability * 100).toFixed(1);
-            output += `候補${i+1}: ${patternNames[p.pattern_number]} (${prob}%) 最大${p.weekMax}ベル\n`;
+          // リストHTMLの生成
+          const validPatterns = groupStats
+            .filter(g => g.prob > 0)
+            .map(g => ({
+              name: g.name,
+              percent: totalProb > 0 ? ((g.prob / totalProb) * 100).toFixed(1) : 0,
+              max: g.max
+            }))
+            .sort((a, b) => b.percent - a.percent);
+
+          let outputHtml = `<div class="text-xs font-bold text-nook-brown/70 mb-3 ml-1 flex items-center gap-1"><span>🔍</span>抽出パターン推移: ${possibilities.length}件</div><div class="space-y-3">`;
+          validPatterns.forEach(vp => {
+            outputHtml += `
+              <div class="bg-nook-bg border border-nook-light p-3.5 rounded-2xl flex flex-col gap-1 shadow-sm">
+                <div class="flex justify-between items-center">
+                  <span class="font-extrabold text-gray-700">${vp.name}</span>
+                  <span class="text-nook-leaf font-extrabold text-lg">${vp.percent}%</span>
+                </div>
+                <div class="text-xs text-gray-500 text-right mt-1">
+                  最大予測: <span class="font-bold text-gray-800 text-sm ml-1">${vp.max}</span> ベル
+                </div>
+              </div>
+            `;
           });
+          outputHtml += `</div>`;
+          document.getElementById('result').innerHTML = outputHtml;
+
         } else {
-          output = "該当パターンなし。入力値を確認してください。";
+          document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm text-center font-bold">該当パターンがありません。<br>入力値を確認してください。</div>`;
         }
         
+        // --- 値上がり確率バナーの更新 ---
         const banner = document.getElementById('futureBanner');
         if (totalProb > 0) {
           let increasePercent = ((futureSpikeProb / totalProb) * 100).toFixed(1);
@@ -290,24 +370,25 @@
           }
           let peakLabel = labels[bestPeakIdx - 2];
 
-          banner.className = "mb-4 p-4 rounded-xl border shadow-sm"; 
+          // デザインリセット
+          banner.className = "mb-6 p-4 rounded-2xl border-2 shadow-sm transition-all duration-300"; 
+          
           if (increasePercent >= 50) {
-            banner.classList.add('bg-green-50', 'border-green-200', 'text-green-800');
-            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📈</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-green-100 ml-1">${peakLabel}</span></div>`;
+            banner.classList.add('bg-green-50', 'border-nook-green', 'text-green-800');
+            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-nook-leaf"><span>📈</span> 値上がり確率: ${increasePercent}%</div><div class="text-sm mt-2 font-medium text-gray-600">最高値の予定日時: <span class="font-bold text-sm bg-white px-3 py-1 rounded-full border border-green-200 ml-1 shadow-sm">${peakLabel}</span></div>`;
           } else if (increasePercent > 0) {
-            banner.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-800');
-            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>🤔</span> 今後値上がりする確率: ${increasePercent}%</div><div class="text-sm mt-1">最高値の予定日時: <span class="font-bold text-base bg-white px-2 py-0.5 rounded border border-yellow-100 ml-1">${peakLabel}</span></div>`;
+            banner.classList.add('bg-yellow-50', 'border-yellow-300', 'text-yellow-800');
+            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-yellow-700"><span>🤔</span> 値上がり確率: ${increasePercent}%</div><div class="text-sm mt-2 font-medium text-gray-600">最高値の予定日時: <span class="font-bold text-sm bg-white px-3 py-1 rounded-full border border-yellow-200 ml-1 shadow-sm">${peakLabel}</span></div>`;
           } else {
             banner.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
-            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2"><span>📉</span> 今後値上がりする確率: 0%</div><div class="text-sm mt-1">これ以上の値上がりは見込めません。今すぐ売却するか、他プレイヤーの島を頼ることを推奨します。</div>`;
+            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-red-600"><span>📉</span> 値上がり確率: 0%</div><div class="text-sm mt-2 text-gray-600 font-medium leading-relaxed">これ以上の値上がりは見込めません。売却するか他プレイヤーの島を頼ることを推奨します。</div>`;
           }
           banner.style.display = 'block';
         } else {
           banner.style.display = 'none';
         }
 
-        document.getElementById('result').textContent = output;
-
+        // --- グラフ描画 ---
         const likelyPrices = Array(12).fill(null);
         if (bestPossibility) {
           bestPossibility.prices.slice(2).forEach((pr, i) => likelyPrices[i] = Math.floor((pr.min + pr.max) / 2));
@@ -315,39 +396,54 @@
 
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
+        
+        // Chart.js のフォントも合わせる
+        Chart.defaults.font.family = '"Hiragino Maru Gothic ProN", "Rounded M+ 1c", sans-serif';
+        Chart.defaults.color = '#7A5C43';
+
         chartInstance = new Chart(ctx, {
           type: 'line',
           data: {
             labels: labels,
             datasets: [
-              { label: '最大予測', data: maxPrices, borderColor: '#61A056', backgroundColor: 'rgba(97, 160, 86, 0.1)', fill: 2, tension: 0.1, pointRadius: 3 },
-              { label: '最有力推移 (中央値)', data: likelyPrices, borderColor: '#3B82F6', borderDash: [5, 5], fill: false, tension: 0.1, pointBackgroundColor: '#3B82F6', pointRadius: 4 },
-              { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.1, pointRadius: 3 }
+              { label: '最大予測', data: maxPrices, borderColor: '#5D9B55', backgroundColor: 'rgba(93, 155, 85, 0.1)', fill: 2, tension: 0.2, pointRadius: 3, borderWidth: 2 },
+              { label: '最有力推移', data: likelyPrices, borderColor: '#3B82F6', borderDash: [6, 4], fill: false, tension: 0.2, pointBackgroundColor: '#3B82F6', pointRadius: 4, borderWidth: 2 },
+              { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.2, pointRadius: 3, borderWidth: 2 }
             ]
           },
-          options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0 } } }
+          options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            scales: { y: { min: 0, grid: { color: '#E5E7EB' } }, x: { grid: { display: false } } },
+            plugins: { legend: { labels: { font: { weight: 'bold' } } } }
+          }
         });
 
+        // --- テーブル描画 ---
         const tbody = document.getElementById('priceTableBody');
         if (possibilities.length > 0) {
-          let trAM = '<tr>'; let trPM = '<tr class="bg-gray-50">';
+          let trAM = '<tr class="bg-white">'; 
+          let trPM = '<tr class="bg-nook-bg/30">';
           for (let i = 0; i < 6; i++) {
             const amMin = minPrices[i * 2] === 999 ? '-' : minPrices[i * 2];
             const amMax = maxPrices[i * 2] === 0 ? '-' : maxPrices[i * 2];
             const pmMin = minPrices[i * 2 + 1] === 999 ? '-' : minPrices[i * 2 + 1];
             const pmMax = maxPrices[i * 2 + 1] === 0 ? '-' : maxPrices[i * 2 + 1];
-            trAM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">AM</div><div class="font-medium">${amMin} ~ ${amMax}</div></td>`;
-            trPM += `<td class="p-2 border-r border-gray-100 last:border-0"><div class="text-xs text-gray-400">PM</div><div class="font-medium text-gray-700">${pmMin} ~ ${pmMax}</div></td>`;
+            
+            trAM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">AM</div><div class="font-extrabold text-gray-700">${amMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${amMax}</div></td>`;
+            trPM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">PM</div><div class="font-extrabold text-gray-700">${pmMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${pmMax}</div></td>`;
           }
-          trAM += '</tr>'; trPM += '</tr>'; tbody.innerHTML = trAM + trPM;
+          trAM += '</tr>'; trPM += '</tr>'; 
+          tbody.innerHTML = trAM + trPM;
         } else {
-          tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-gray-400">データがありません</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-gray-400">データがありません</td></tr>';
         }
       } catch (e) {
-        document.getElementById('result').textContent = "エラーが発生しました: " + e.message;
+        document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm">エラーが発生しました: ${e.message}</div>`;
       }
     }
 
+    // --- 共有リンクボタン ---
     document.getElementById('shareBtn').addEventListener('click', () => {
       const pat = document.getElementById('previous_pattern').value;
       const f = document.getElementById('first_buy').checked ? 1 : 0;
@@ -361,11 +457,13 @@
       navigator.clipboard.writeText(url.toString()).then(() => {
         const btn = document.getElementById('shareBtn');
         const originalText = btn.textContent;
-        btn.textContent = 'コピーしました！';
-        btn.classList.replace('bg-gray-200', 'bg-kabu-light'); btn.classList.replace('text-gray-700', 'text-white');
+        btn.textContent = 'コピー完了!';
+        btn.classList.replace('bg-white', 'bg-nook-green'); 
+        btn.classList.replace('text-nook-leaf', 'text-white');
         setTimeout(() => {
           btn.textContent = originalText;
-          btn.classList.replace('bg-kabu-light', 'bg-gray-200'); btn.classList.replace('text-white', 'text-gray-700');
+          btn.classList.replace('bg-nook-green', 'bg-white'); 
+          btn.classList.replace('text-white', 'text-nook-leaf');
         }, 2000);
       });
     });
