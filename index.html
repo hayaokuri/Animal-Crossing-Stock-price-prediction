@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カブ価予測ツールPro - ACNH Turnip Prophet</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mikebryant/ac-nh-turnip-prices/js/predictions.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kabu: '#61A056', // あつ森のカブっぽい緑色
+            'kabu-light': '#8BCB7B',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl font-extrabold text-kabu flex items-center justify-center gap-3">
+        <span>🥬</span> カブ価予測ツールPro
+      </h1>
+      <p class="text-gray-600 mt-2">あつまれ どうぶつの森 カブ価推移予測 (Treeki & mikebryantロジック実装版)</p>
+    </header>
+
+    <main class="grid grid-cols-1 xl:grid-cols-3 xl:gap-8">
+      
+      <div class="xl:col-span-1 space-y-6">
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 class="text-xl font-bold mb-5 flex items-center gap-2 text-gray-800">
+            <span>📅</span> 価格を入力
+          </h2>
+          
+          <div class="space-y-4">
+            <div class="bg-kabu/5 p-4 rounded-xl border border-kabu/20">
+              <label for="buy" class="block text-sm font-semibold text-kabu mb-1">日曜の買値 (ウリ)</label>
+              <input type="number" id="buy" placeholder="例: 90" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-kabu/50 focus:border-kabu outline-none transition duration-150">
+            </div>
+
+            <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+              <script>
+                const days = [
+                  { id: 'm', label: '月曜' }, { id: 'tu', label: '火曜' },
+                  { id: 'w', label: '水曜' }, { id: 'th', label: '木曜' },
+                  { id: 'f', label: '金曜' }, { id: 'sa', label: '土曜' }
+                ];
+                days.forEach(day => {
+                  document.write(`
+                    <div class="space-y-1.5">
+                      <label class="block text-xs font-medium text-gray-500">${day.label}</label>
+                      <input type="number" id="${day.id}1" placeholder="AM" class="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kabu-light focus:border-kabu-light outline-none text-sm transition duration-150">
+                      <input type="number" id="${day.id}2" placeholder="PM" class="w-full px-3 py-1.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kabu-light focus:border-kabu-light outline-none text-sm transition duration-150">
+                    </div>
+                  `);
+                });
+              </script>
+            </div>
+          </div>
+
+          <button id="predictBtn" class="w-full mt-6 bg-kabu hover:bg-kabu-light text-white font-bold py-3 px-6 rounded-xl shadow-md hover:shadow-lg transition duration-150 flex items-center justify-center gap-2 text-lg">
+            <span>✨</span> 予測を実行する
+          </button>
+        </section>
+
+        <section class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+            <span>📋</span> 推測されるパターン
+          </h2>
+          <pre id="result" class="bg-gray-50 p-4 rounded-xl text-gray-700 text-sm overflow-x-auto font-mono whitespace-pre-wrap leading-relaxed shadow-inner border border-gray-100">数値を入力して予測を実行してください。</pre>
+        </section>
+      </div>
+
+      <div class="xl:col-span-2 mt-8 xl:mt-0">
+        <section class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 h-full">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+            <span>📈</span> 価格推移予測グラフ
+          </h2>
+          <div class="relative h-[300px] md:h-[400px] xl:h-[500px]">
+            <canvas id="priceChart"></canvas>
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <footer class="mt-16 text-center text-gray-500 text-sm border-t border-gray-100 pt-8">
+      <p>このツールは、GitHubで公開されている予測エンジンを基に作成されています。</p>
+      <p class="mt-1">©️ 2026 Developed with ❤️ for GitHub Pages</p>
+    </footer>
+  </div>
+
+  <script>
+    let chartInstance = null;
+    const patternNames = ["波型", "大跳ね型", "減少型", "小跳ね型"];
+    const labels = ["月AM", "月PM", "火AM", "火PM", "水AM", "水PM", "木AM", "木PM", "金AM", "金PM", "土AM", "土PM"];
+
+    // グラフの色定義（Tailwind themeに合わせて調整）
+    const colors = {
+      primary: 'rgb(97, 160, 86)', // kabu
+      primaryLight: 'rgba(97, 160, 86, 0.1)',
+      secondary: 'rgb(239, 68, 68)', // Tailwind red-500
+      secondaryLight: 'rgba(239, 68, 68, 0.1)'
+    };
+
+    document.getElementById('predictBtn').addEventListener('click', () => {
+      // フォームから値を取得
+      const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
+      const buyPrice = getVal('buy');
+      const sellPrices = ['m1', 'm2', 'tu1', 'tu2', 'w1', 'w2', 'th1', 'th2', 'f1', 'f2', 'sa1', 'sa2'].map(getVal);
+
+      // 予測エンジンの実行
+      const predictor = new Predictor(sellPrices, false, buyPrice);
+      const possibilities = predictor.analyze_possibilities();
+
+      // 結果の生成と通知判定
+      let output = `抽出されたパターン: ${possibilities.length}件\n`;
+      let maxSpike = 0;
+      let mostProbablePattern = "減少型";
+
+      if (possibilities.length > 0) {
+          possibilities.slice(0, 4).forEach((p, index) => {
+            const prob = (p.category_total_probability * 100).toFixed(2);
+            const patternName = patternNames[p.pattern_number];
+            output += `\n候補${index + 1}: ${patternName.padEnd(5)} (確率: ${prob.padStart(5)}%) - 最大: ${p.weekMax}ベル`;
+            if (p.weekMax > maxSpike) maxSpike = p.weekMax;
+          });
+      } else {
+          output = "可能性のあるパターンが見つかりませんでした。入力値を確認してください。";
+      }
+
+      document.getElementById('result').textContent = output;
+
+      // 通知（高騰検知）
+      if (maxSpike >= 500 && Notification.permission === 'granted') {
+          new Notification('🥬 高騰予測検知', { body: `最大${maxSpike}ベルの価格上昇が予測されました。` });
+      } else if (maxSpike >= 500 && Notification.permission !== 'denied') {
+          Notification.requestPermission();
+      }
+
+      // グラフ用データの算出（最小・最大）
+      const minPrices = Array(12).fill(999);
+      const maxPrices = Array(12).fill(0);
+
+      possibilities.forEach(p => {
+        p.prices.slice(2).forEach((priceRange, i) => { // 月AM以降
+          if (priceRange.min < minPrices[i]) minPrices[i] = priceRange.min;
+          if (priceRange.max > maxPrices[i]) maxPrices[i] = priceRange.max;
+        });
+      });
+
+      // グラフ描画
+      const ctx = document.getElementById('priceChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '予測最大値',
+              data: maxPrices,
+              borderColor: colors.primary,
+              backgroundColor: colors.primaryLight,
+              borderWidth: 2,
+              pointBackgroundColor: colors.primary,
+              pointRadius: 3,
+              fill: '+1', // 最小値の線まで塗りつぶす
+              tension: 0.3 // 線を滑らかに
+            },
+            {
+              label: '予測最小値',
+              data: minPrices,
+              borderColor: colors.secondary,
+              backgroundColor: colors.secondaryLight,
+              borderWidth: 2,
+              pointBackgroundColor: colors.secondary,
+              pointRadius: 3,
+              fill: false,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                boxWidth: 15,
+                font: { size: 12, weight: 'bold' },
+                padding: 15
+              }
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(17, 24, 39, 0.9)', // Tailwind gray-900
+              padding: 12,
+              cornerRadius: 8,
+              titleFont: { size: 14, weight: 'bold' },
+              bodyFont: { size: 13 }
+            }
+          },
+          scales: {
+            y: {
+              min: 0,
+              suggestedMax: 600,
+              ticks: { color: '#6b7280', font: { size: 11 } },
+              grid: { color: '#f3f4f6' },
+              title: { display: true, text: '価格 (ベル)', color: '#6b7280' }
+            },
+            x: {
+              ticks: { color: '#6b7280', font: { size: 11 } },
+              grid: { display: false }
+            }
+          },
+          interaction: { mode: 'nearest', axis: 'x', intersect: false }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
