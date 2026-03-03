@@ -279,8 +279,6 @@
 
         const minPrices = Array(12).fill(999);
         const maxPrices = Array(12).fill(0);
-        let bestPossibility = null;
-        let highestProb = -1;
 
         const groupStats = [
           { name: "波型", prob: 0, max: 0 },
@@ -288,6 +286,9 @@
           { name: "減少型", prob: 0, max: 0 },
           { name: "小跳ね型", prob: 0, max: 0 }
         ];
+
+        // 期待値推移算出用配列の初期化
+        const expectedPrices = Array(12).fill(0);
 
         if (possibilities.length > 0) {
           possibilities.forEach(p => {
@@ -312,12 +313,24 @@
             }
             peakTimeProb[peakIdx] += probWeight;
 
-            if (probWeight > highestProb) { highestProb = probWeight; bestPossibility = p; }
             p.prices.slice(2).forEach((pr, i) => {
               if (pr.min < minPrices[i]) minPrices[i] = pr.min;
               if (pr.max > maxPrices[i]) maxPrices[i] = pr.max;
             });
           });
+
+          // 全パターンの確率加重平均を算出
+          if (totalProb > 0) {
+            possibilities.forEach(p => {
+              const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
+              p.prices.slice(2).forEach((pr, i) => {
+                expectedPrices[i] += ((pr.min + pr.max) / 2) * (probWeight / totalProb);
+              });
+            });
+            for (let i = 0; i < 12; i++) {
+              expectedPrices[i] = Math.round(expectedPrices[i]);
+            }
+          }
 
           const validPatterns = groupStats
             .filter(g => g.prob > 0)
@@ -376,11 +389,6 @@
           banner.style.display = 'none';
         }
 
-        const likelyPrices = Array(12).fill(null);
-        if (bestPossibility) {
-          bestPossibility.prices.slice(2).forEach((pr, i) => likelyPrices[i] = Math.floor((pr.min + pr.max) / 2));
-        }
-
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         
@@ -393,7 +401,7 @@
             labels: labels,
             datasets: [
               { label: '最大予測', data: maxPrices, borderColor: '#5D9B55', backgroundColor: 'rgba(93, 155, 85, 0.1)', fill: 2, tension: 0.2, pointRadius: 3, borderWidth: 2 },
-              { label: '最有力推移', data: likelyPrices, borderColor: '#3B82F6', borderDash: [6, 4], fill: false, tension: 0.2, pointBackgroundColor: '#3B82F6', pointRadius: 4, borderWidth: 2 },
+              { label: '期待値推移 (加重平均)', data: expectedPrices, borderColor: '#3B82F6', borderDash: [6, 4], fill: false, tension: 0.2, pointBackgroundColor: '#3B82F6', pointRadius: 4, borderWidth: 2 },
               { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.2, pointRadius: 3, borderWidth: 2 }
             ]
           },
@@ -452,27 +460,4 @@
       
       const url = new URL(window.location.href.split('?')[0]);
       url.searchParams.set('pat', pat); url.searchParams.set('f', f);
-      url.searchParams.set('b', b); url.searchParams.set('p', p);
-      
-      navigator.clipboard.writeText(url.toString()).then(() => {
-        const btn = document.getElementById('shareBtn');
-        const originalText = btn.textContent;
-        btn.textContent = 'コピー完了!';
-        btn.classList.replace('bg-white', 'bg-nook-green'); 
-        btn.classList.replace('text-nook-leaf', 'text-white');
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.classList.replace('bg-nook-green', 'bg-white'); 
-          btn.classList.replace('text-white', 'text-nook-leaf');
-        }, 2000);
-      });
-    });
-
-    document.querySelectorAll('input, select').forEach(el => {
-      el.addEventListener('change', () => { saveState(); runPrediction(); });
-    });
-    document.getElementById('predictBtn').addEventListener('click', () => { saveState(); runPrediction(); });
-    window.addEventListener('DOMContentLoaded', loadState);
-  </script>
-</body>
-</html>
+      url.
