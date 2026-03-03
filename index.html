@@ -5,33 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>あつ森株価予想</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/gh/mikebryant/ac-nh-turnip-prices/js/predictions.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mikebryant/ac-nh-turnip-prices@master/js/predictions.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     tailwind.config = { 
       theme: { 
         extend: { 
           colors: { 
-            nook: {
-              green: '#82C87A',
-              leaf: '#5D9B55',
-              bg: '#F7FAF3',
-              brown: '#7A5C43',
-              light: '#DDF0D9',
-              card: '#FFFFFF'
-            },
+            nook: { green: '#82C87A', leaf: '#5D9B55', bg: '#F7FAF3', brown: '#7A5C43', light: '#DDF0D9', card: '#FFFFFF' },
             'active-time': '#FEF08A' 
           },
-          fontFamily: {
-            'maru': ['"Hiragino Maru Gothic ProN"', '"Rounded M+ 1c"', '"YuGothic"', '"Yu Gothic"', 'sans-serif']
-          }
+          fontFamily: { 'maru': ['"Hiragino Maru Gothic ProN"', '"Rounded M+ 1c"', '"YuGothic"', '"Yu Gothic"', 'sans-serif'] }
         } 
       } 
     }
   </script>
   <style>
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { opacity: 1; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 1; }
   </style>
 </head>
 <body class="bg-nook-bg text-nook-brown font-maru">
@@ -76,20 +66,12 @@
             </div>
 
             <div class="grid grid-cols-2 gap-3">
-              <script>
-                const days = [ { id: 'm', l: '月曜' }, { id: 'tu', l: '火曜' }, { id: 'w', l: '水曜' }, { id: 'th', l: '木曜' }, { id: 'f', l: '金曜' }, { id: 'sa', l: '土曜' } ];
-                days.forEach(d => {
-                  document.write(`
-                    <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm">
-                      <label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">${d.l}</label>
-                      <div class="space-y-1.5">
-                        <input type="number" id="${d.id}1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green">
-                        <input type="number" id="${d.id}2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green">
-                      </div>
-                    </div>
-                  `);
-                });
-              </script>
+              <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm"><label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">月曜</label><div class="space-y-1.5"><input type="number" id="m1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"><input type="number" id="m2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"></div></div>
+              <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm"><label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">火曜</label><div class="space-y-1.5"><input type="number" id="tu1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"><input type="number" id="tu2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"></div></div>
+              <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm"><label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">水曜</label><div class="space-y-1.5"><input type="number" id="w1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"><input type="number" id="w2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"></div></div>
+              <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm"><label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">木曜</label><div class="space-y-1.5"><input type="number" id="th1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"><input type="number" id="th2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"></div></div>
+              <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm"><label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">金曜</label><div class="space-y-1.5"><input type="number" id="f1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"><input type="number" id="f2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"></div></div>
+              <div class="bg-white rounded-2xl border border-nook-light p-2 shadow-sm"><label class="block text-xs font-bold text-center text-nook-brown/70 mb-2">土曜</label><div class="space-y-1.5"><input type="number" id="sa1" placeholder="AM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"><input type="number" id="sa2" placeholder="PM" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg outline-none text-sm text-center text-gray-700 font-medium transition-colors duration-300 focus:border-nook-green focus:ring-1 focus:ring-nook-green"></div></div>
             </div>
           </div>
           
@@ -161,13 +143,16 @@
       const day = d.getDay();
       const hour = d.getHours();
       
-      document.getElementById('container_buy').classList.remove('bg-yellow-100', 'border-yellow-400');
+      const buyEl = document.getElementById('container_buy');
+      if(buyEl) buyEl.classList.remove('bg-yellow-100', 'border-yellow-400');
+      
       inputIds.forEach(id => {
-        document.getElementById(id).classList.remove('bg-yellow-100', 'border-yellow-400');
+        const el = document.getElementById(id);
+        if(el) el.classList.remove('bg-yellow-100', 'border-yellow-400');
       });
       
       if (day === 0) {
-        document.getElementById('container_buy').classList.add('bg-yellow-100', 'border-yellow-400');
+        if(buyEl) buyEl.classList.add('bg-yellow-100', 'border-yellow-400');
       } else {
         const ampm = hour < 12 ? '1' : '2';
         const dayPrefix = ['m', 'tu', 'w', 'th', 'f', 'sa'][day - 1];
@@ -198,14 +183,21 @@
     }
 
     function saveState() {
-      const state = {
-        weekId: getACNHWeekId(),
-        buy: parseInt(document.getElementById('buy').value, 10) || 100,
-        sells: inputIds.map(id => document.getElementById(id).value),
-        prev: parseInt(document.getElementById('previous_pattern').value, 10),
-        first: document.getElementById('first_buy').checked
-      };
-      localStorage.setItem('turnip_state', JSON.stringify(state));
+      try {
+        const state = {
+          weekId: getACNHWeekId(),
+          buy: parseInt(document.getElementById('buy').value, 10) || 100,
+          sells: inputIds.map(id => {
+            const el = document.getElementById(id);
+            return el ? el.value : '';
+          }),
+          prev: parseInt(document.getElementById('previous_pattern').value, 10),
+          first: document.getElementById('first_buy').checked
+        };
+        localStorage.setItem('turnip_state', JSON.stringify(state));
+      } catch (e) {
+        console.warn("localStorage could not be accessed.");
+      }
     }
 
     function applyUrlParams() {
@@ -216,38 +208,53 @@
       if (params.has('b')) document.getElementById('buy').value = params.get('b');
       if (params.has('p')) {
         const pArray = params.get('p').split(',');
-        inputIds.forEach((id, i) => { document.getElementById(id).value = pArray[i] || ''; });
+        inputIds.forEach((id, i) => { 
+          const el = document.getElementById(id);
+          if(el) el.value = pArray[i] || ''; 
+        });
       }
       return true;
     }
 
     function loadState() {
-      highlightCurrentTime();
+      try { highlightCurrentTime(); } catch(e) { console.warn(e); }
       if (applyUrlParams()) { runPrediction(); return; }
       
-      const saved = localStorage.getItem('turnip_state');
+      let saved = null;
+      try { saved = localStorage.getItem('turnip_state'); } catch(e) {}
+      
       const currentWeekId = getACNHWeekId();
       
       if (saved) {
-        const state = JSON.parse(saved);
-        if (state.weekId !== currentWeekId) {
-          const numericSells = state.sells.map(v => parseInt(v, 10) || NaN);
-          const oldPrices = [state.buy, state.buy, ...numericSells];
-          const bestPattern = getBestPattern(oldPrices, state.first, state.prev);
-          
-          document.getElementById('previous_pattern').value = bestPattern;
-          document.getElementById('first_buy').checked = false;
-          document.getElementById('buy').value = 100;
-          inputIds.forEach(id => document.getElementById(id).value = '');
-          
-          const pName = bestPattern >= 0 ? patternNames[bestPattern] : '不明';
-          document.getElementById('result').innerHTML = `<div class="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm">新しい週になりました。<br>先週のデータから前回パターンを「<b>${pName}</b>」と設定しました。</div>`;
-          saveState();
-        } else {
-          document.getElementById('previous_pattern').value = state.prev;
-          document.getElementById('first_buy').checked = state.first;
-          document.getElementById('buy').value = state.buy || 100;
-          inputIds.forEach((id, i) => document.getElementById(id).value = state.sells[i] || '');
+        try {
+          const state = JSON.parse(saved);
+          if (state.weekId !== currentWeekId) {
+            const numericSells = state.sells.map(v => parseInt(v, 10) || NaN);
+            const oldPrices = [state.buy, state.buy, ...numericSells];
+            const bestPattern = getBestPattern(oldPrices, state.first, state.prev);
+            
+            document.getElementById('previous_pattern').value = bestPattern;
+            document.getElementById('first_buy').checked = false;
+            document.getElementById('buy').value = 100;
+            inputIds.forEach(id => {
+              const el = document.getElementById(id);
+              if(el) el.value = '';
+            });
+            
+            const pName = bestPattern >= 0 ? patternNames[bestPattern] : '不明';
+            document.getElementById('result').innerHTML = `<div class="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">新しい週になりました。<br>先週のデータから前回パターンを「<b class="text-base">${pName}</b>」に自動設定しました。数値を入力してください。</div>`;
+            saveState();
+          } else {
+            document.getElementById('previous_pattern').value = state.prev;
+            document.getElementById('first_buy').checked = state.first;
+            document.getElementById('buy').value = state.buy || 100;
+            inputIds.forEach((id, i) => {
+              const el = document.getElementById(id);
+              if(el) el.value = state.sells[i] || '';
+            });
+            runPrediction();
+          }
+        } catch(e) {
           runPrediction();
         }
       } else {
@@ -256,15 +263,27 @@
     }
 
     function runPrediction() {
-      const getVal = id => parseInt(document.getElementById(id).value, 10) || NaN;
-      const buyPriceVal = getVal('buy');
-      const basePrice = isNaN(buyPriceVal) ? 100 : buyPriceVal;
-      const sellPrices = inputIds.map(getVal);
-      const prices = [buyPriceVal, buyPriceVal, ...sellPrices];
-      const isFirstBuy = document.getElementById('first_buy').checked;
-      const prevPattern = parseInt(document.getElementById('previous_pattern').value, 10);
-
       try {
+        if (typeof Predictor === 'undefined') {
+          throw new Error("予測エンジンの読み込みに失敗しました。ページをリロードしてください。");
+        }
+
+        const getVal = id => {
+          const el = document.getElementById(id);
+          return el ? (parseInt(el.value, 10) || NaN) : NaN;
+        };
+
+        const buyPriceVal = getVal('buy');
+        const basePrice = isNaN(buyPriceVal) ? 100 : buyPriceVal;
+        const sellPrices = inputIds.map(getVal);
+        const prices = [buyPriceVal, buyPriceVal, ...sellPrices];
+        
+        const firstBuyEl = document.getElementById('first_buy');
+        const isFirstBuy = firstBuyEl ? firstBuyEl.checked : false;
+        
+        const prevPatEl = document.getElementById('previous_pattern');
+        const prevPattern = prevPatEl ? parseInt(prevPatEl.value, 10) : -1;
+
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
         const possibilities = predictor.analyze_possibilities();
 
@@ -279,6 +298,7 @@
 
         const minPrices = Array(12).fill(999);
         const maxPrices = Array(12).fill(0);
+        const expectedPrices = Array(12).fill(0);
 
         const groupStats = [
           { name: "波型", prob: 0, max: 0 },
@@ -286,9 +306,6 @@
           { name: "減少型", prob: 0, max: 0 },
           { name: "小跳ね型", prob: 0, max: 0 }
         ];
-
-        // 期待値推移算出用配列の初期化
-        const expectedPrices = Array(12).fill(0);
 
         if (possibilities.length > 0) {
           possibilities.forEach(p => {
@@ -319,7 +336,6 @@
             });
           });
 
-          // 全パターンの確率加重平均を算出
           if (totalProb > 0) {
             possibilities.forEach(p => {
               const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
@@ -327,9 +343,7 @@
                 expectedPrices[i] += ((pr.min + pr.max) / 2) * (probWeight / totalProb);
               });
             });
-            for (let i = 0; i < 12; i++) {
-              expectedPrices[i] = Math.round(expectedPrices[i]);
-            }
+            for (let i = 0; i < 12; i++) expectedPrices[i] = Math.round(expectedPrices[i]);
           }
 
           const validPatterns = groupStats
@@ -413,13 +427,13 @@
           }
         });
 
-        // --- テーブル描画 ---
         const tbody = document.getElementById('priceTableBody');
         if (possibilities.length > 0) {
           let trAM = '<tr class="bg-white">'; 
           let trPM = '<tr class="bg-nook-bg/30">';
           for (let i = 0; i < 6; i++) {
-            const amInputVal = parseInt(document.getElementById(inputIds[i * 2]).value, 10);
+            const amInputEl = document.getElementById(inputIds[i * 2]);
+            const amInputVal = amInputEl ? parseInt(amInputEl.value, 10) : NaN;
             let amText = '';
             if (!isNaN(amInputVal)) {
               amText = amInputVal;
@@ -429,7 +443,8 @@
               amText = `${amMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${amMax}`;
             }
 
-            const pmInputVal = parseInt(document.getElementById(inputIds[i * 2 + 1]).value, 10);
+            const pmInputEl = document.getElementById(inputIds[i * 2 + 1]);
+            const pmInputVal = pmInputEl ? parseInt(pmInputEl.value, 10) : NaN;
             let pmText = '';
             if (!isNaN(pmInputVal)) {
               pmText = pmInputVal;
@@ -448,7 +463,7 @@
           tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-gray-400">データがありません</td></tr>';
         }
       } catch (e) {
-        document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm">エラーが発生しました: ${e.message}</div>`;
+        document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm font-bold shadow-sm">処理エラー: ${e.message}</div>`;
       }
     }
 
@@ -456,8 +471,34 @@
       const pat = document.getElementById('previous_pattern').value;
       const f = document.getElementById('first_buy').checked ? 1 : 0;
       const b = document.getElementById('buy').value;
-      const p = inputIds.map(id => document.getElementById(id).value).join(',');
+      const p = inputIds.map(id => {
+        const el = document.getElementById(id);
+        return el ? el.value : '';
+      }).join(',');
       
       const url = new URL(window.location.href.split('?')[0]);
       url.searchParams.set('pat', pat); url.searchParams.set('f', f);
-      url.
+      url.searchParams.set('b', b); url.searchParams.set('p', p);
+      
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        const btn = document.getElementById('shareBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'コピー完了!';
+        btn.classList.replace('bg-white', 'bg-nook-green'); 
+        btn.classList.replace('text-nook-leaf', 'text-white');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.replace('bg-nook-green', 'bg-white'); 
+          btn.classList.replace('text-white', 'text-nook-leaf');
+        }, 2000);
+      });
+    });
+
+    document.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', () => { saveState(); runPrediction(); });
+    });
+    document.getElementById('predictBtn').addEventListener('click', () => { saveState(); runPrediction(); });
+    window.addEventListener('DOMContentLoaded', loadState);
+  </script>
+</body>
+</html>
