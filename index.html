@@ -13,11 +13,11 @@
         extend: { 
           colors: { 
             nook: {
-              green: '#82C87A',   // 柔らかい緑
-              leaf: '#5D9B55',    // 濃いアクセント緑
-              bg: '#F7FAF3',      // 背景の薄いクリーム緑
-              brown: '#7A5C43',   // ウッド調のテキスト色
-              light: '#DDF0D9',   // 境界線や薄い背景用
+              green: '#82C87A',
+              leaf: '#5D9B55',
+              bg: '#F7FAF3',
+              brown: '#7A5C43',
+              light: '#DDF0D9',
               card: '#FFFFFF'
             },
             'active-time': '#FEF08A' 
@@ -30,7 +30,6 @@
     }
   </script>
   <style>
-    /* 追加の微調整スタイル */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { opacity: 1; }
   </style>
@@ -129,9 +128,7 @@
       <div class="xl:col-span-1 space-y-6">
         <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light h-full">
           <h2 class="text-xl font-bold mb-5 text-nook-brown">推測されるパターン</h2>
-          
           <div id="futureBanner" style="display: none;" class="mb-6 p-4 rounded-2xl border-2 shadow-sm transition-all duration-300"></div>
-          
           <div id="result">
             <div class="text-gray-400 p-4 text-center text-sm bg-gray-50 rounded-xl border border-gray-100">読み込み中...</div>
           </div>
@@ -159,7 +156,6 @@
     const inputIds = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'];
     let chartInstance = null;
 
-    // --- 現在時刻のハイライト（背景色を黄色系に変更） ---
     function highlightCurrentTime() {
       const d = new Date();
       const day = d.getDay();
@@ -286,7 +282,6 @@
         let bestPossibility = null;
         let highestProb = -1;
 
-        // パターン集約用グループ
         const groupStats = [
           { name: "波型", prob: 0, max: 0 },
           { name: "大跳ね型", prob: 0, max: 0 },
@@ -296,11 +291,9 @@
 
         if (possibilities.length > 0) {
           possibilities.forEach(p => {
-            // 確率がない場合のフェールセーフ
             const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
             totalProb += probWeight;
             
-            // パターン別集計（NaN防ぎ）
             if (p.pattern_number !== undefined && p.pattern_number >= 0 && p.pattern_number <= 3) {
               groupStats[p.pattern_number].prob += probWeight;
               if (p.weekMax > groupStats[p.pattern_number].max) {
@@ -308,7 +301,6 @@
               }
             }
             
-            // ピーク日時の集計
             let peakIdx = 2;
             let peakAvg = 0;
             for (let i = 2; i <= 13; i++) {
@@ -320,7 +312,6 @@
             }
             peakTimeProb[peakIdx] += probWeight;
 
-            // グラフ用の最大最小
             if (probWeight > highestProb) { highestProb = probWeight; bestPossibility = p; }
             p.prices.slice(2).forEach((pr, i) => {
               if (pr.min < minPrices[i]) minPrices[i] = pr.min;
@@ -328,7 +319,6 @@
             });
           });
 
-          // リストHTMLの生成
           const validPatterns = groupStats
             .filter(g => g.prob > 0)
             .map(g => ({
@@ -359,7 +349,6 @@
           document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm text-center font-bold">該当パターンがありません。<br>入力値を確認してください。</div>`;
         }
         
-        // --- 値上がり確率バナーの更新 ---
         const banner = document.getElementById('futureBanner');
         if (totalProb > 0) {
           let increasePercent = ((futureSpikeProb / totalProb) * 100).toFixed(1);
@@ -370,7 +359,6 @@
           }
           let peakLabel = labels[bestPeakIdx - 2];
 
-          // デザインリセット
           banner.className = "mb-6 p-4 rounded-2xl border-2 shadow-sm transition-all duration-300"; 
           
           if (increasePercent >= 50) {
@@ -388,7 +376,6 @@
           banner.style.display = 'none';
         }
 
-        // --- グラフ描画 ---
         const likelyPrices = Array(12).fill(null);
         if (bestPossibility) {
           bestPossibility.prices.slice(2).forEach((pr, i) => likelyPrices[i] = Math.floor((pr.min + pr.max) / 2));
@@ -397,7 +384,6 @@
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         
-        // Chart.js のフォントも合わせる
         Chart.defaults.font.family = '"Hiragino Maru Gothic ProN", "Rounded M+ 1c", sans-serif';
         Chart.defaults.color = '#7A5C43';
 
@@ -425,13 +411,28 @@
           let trAM = '<tr class="bg-white">'; 
           let trPM = '<tr class="bg-nook-bg/30">';
           for (let i = 0; i < 6; i++) {
-            const amMin = minPrices[i * 2] === 999 ? '-' : minPrices[i * 2];
-            const amMax = maxPrices[i * 2] === 0 ? '-' : maxPrices[i * 2];
-            const pmMin = minPrices[i * 2 + 1] === 999 ? '-' : minPrices[i * 2 + 1];
-            const pmMax = maxPrices[i * 2 + 1] === 0 ? '-' : maxPrices[i * 2 + 1];
+            const amInputVal = parseInt(document.getElementById(inputIds[i * 2]).value, 10);
+            let amText = '';
+            if (!isNaN(amInputVal)) {
+              amText = amInputVal;
+            } else {
+              const amMin = minPrices[i * 2] === 999 ? '-' : minPrices[i * 2];
+              const amMax = maxPrices[i * 2] === 0 ? '-' : maxPrices[i * 2];
+              amText = `${amMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${amMax}`;
+            }
+
+            const pmInputVal = parseInt(document.getElementById(inputIds[i * 2 + 1]).value, 10);
+            let pmText = '';
+            if (!isNaN(pmInputVal)) {
+              pmText = pmInputVal;
+            } else {
+              const pmMin = minPrices[i * 2 + 1] === 999 ? '-' : minPrices[i * 2 + 1];
+              const pmMax = maxPrices[i * 2 + 1] === 0 ? '-' : maxPrices[i * 2 + 1];
+              pmText = `${pmMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${pmMax}`;
+            }
             
-            trAM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">AM</div><div class="font-extrabold text-gray-700">${amMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${amMax}</div></td>`;
-            trPM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">PM</div><div class="font-extrabold text-gray-700">${pmMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${pmMax}</div></td>`;
+            trAM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">AM</div><div class="font-extrabold text-gray-700">${amText}</div></td>`;
+            trPM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">PM</div><div class="font-extrabold text-gray-700">${pmText}</div></td>`;
           }
           trAM += '</tr>'; trPM += '</tr>'; 
           tbody.innerHTML = trAM + trPM;
@@ -443,7 +444,6 @@
       }
     }
 
-    // --- 共有リンクボタン ---
     document.getElementById('shareBtn').addEventListener('click', () => {
       const pat = document.getElementById('previous_pattern').value;
       const f = document.getElementById('first_buy').checked ? 1 : 0;
