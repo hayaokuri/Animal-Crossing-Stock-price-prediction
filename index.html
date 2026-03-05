@@ -217,7 +217,7 @@
     }
 
     function loadState() {
-      try { highlightCurrentTime(); } catch(e) { console.warn(e); }
+      try { highlightCurrentTime(); } catch(e) {}
       if (applyUrlParams()) { runPrediction(); return; }
       
       let saved = null;
@@ -409,14 +409,18 @@
         Chart.defaults.font.family = '"Hiragino Maru Gothic ProN", "Rounded M+ 1c", sans-serif';
         Chart.defaults.color = '#7A5C43';
 
+        // グラフの実測値用データ配列の生成（NaNをnullに変換）
+        const actualPricesData = sellPrices.map(val => isNaN(val) ? null : val);
+
         chartInstance = new Chart(ctx, {
           type: 'line',
           data: {
             labels: labels,
             datasets: [
-              { label: '最大予測', data: maxPrices, borderColor: '#5D9B55', backgroundColor: 'rgba(93, 155, 85, 0.1)', fill: 2, tension: 0.2, pointRadius: 3, borderWidth: 2 },
-              { label: '期待値推移 (加重平均)', data: expectedPrices, borderColor: '#3B82F6', borderDash: [6, 4], fill: false, tension: 0.2, pointBackgroundColor: '#3B82F6', pointRadius: 4, borderWidth: 2 },
-              { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.2, pointRadius: 3, borderWidth: 2 }
+              { label: '最大予測', data: maxPrices, borderColor: '#5D9B55', backgroundColor: 'rgba(93, 155, 85, 0.1)', fill: 2, tension: 0.2, pointRadius: 3, borderWidth: 2, order: 3 },
+              { label: '期待値推移', data: expectedPrices, borderColor: '#3B82F6', borderDash: [6, 4], fill: false, tension: 0.2, pointBackgroundColor: '#3B82F6', pointRadius: 4, borderWidth: 2, order: 2 },
+              { label: '最小予測', data: minPrices, borderColor: '#EF4444', fill: false, tension: 0.2, pointRadius: 3, borderWidth: 2, order: 4 },
+              { label: '実測値', data: actualPricesData, borderColor: '#4B5563', backgroundColor: '#4B5563', fill: false, tension: 0, pointRadius: 5, pointBackgroundColor: '#F59E0B', borderWidth: 3, spanGaps: true, order: 1 }
             ]
           },
           options: { 
