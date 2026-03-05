@@ -403,14 +403,25 @@
           banner.style.display = 'none';
         }
 
+        // --- 過去の予測線を非表示にする処理 ---
+        const actualPricesData = sellPrices.map(val => isNaN(val) ? null : val);
+        let lastActualIdx = -1;
+        for (let i = 0; i < 12; i++) {
+          if (actualPricesData[i] !== null) lastActualIdx = i;
+        }
+
+        for (let i = 0; i < lastActualIdx; i++) {
+          maxPrices[i] = null;
+          expectedPrices[i] = null;
+          minPrices[i] = null;
+        }
+        // ------------------------------------
+
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
         
         Chart.defaults.font.family = '"Hiragino Maru Gothic ProN", "Rounded M+ 1c", sans-serif';
         Chart.defaults.color = '#7A5C43';
-
-        // グラフの実測値用データ配列の生成（NaNをnullに変換）
-        const actualPricesData = sellPrices.map(val => isNaN(val) ? null : val);
 
         chartInstance = new Chart(ctx, {
           type: 'line',
