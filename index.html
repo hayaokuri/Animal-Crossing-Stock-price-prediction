@@ -403,7 +403,6 @@
           banner.style.display = 'none';
         }
 
-        // --- 過去の予測線を非表示にする処理 ---
         const actualPricesData = sellPrices.map(val => isNaN(val) ? null : val);
         let lastActualIdx = -1;
         for (let i = 0; i < 12; i++) {
@@ -415,7 +414,6 @@
           expectedPrices[i] = null;
           minPrices[i] = null;
         }
-        // ------------------------------------
 
         const ctx = document.getElementById('priceChart').getContext('2d');
         if (chartInstance) chartInstance.destroy();
@@ -447,26 +445,47 @@
           let trAM = '<tr class="bg-white">'; 
           let trPM = '<tr class="bg-nook-bg/30">';
           for (let i = 0; i < 6; i++) {
+            
+            // AM の処理
             const amInputEl = document.getElementById(inputIds[i * 2]);
             const amInputVal = amInputEl ? parseInt(amInputEl.value, 10) : NaN;
             let amText = '';
+            
             if (!isNaN(amInputVal)) {
               amText = amInputVal;
             } else {
-              const amMin = minPrices[i * 2] === 999 ? '-' : minPrices[i * 2];
-              const amMax = maxPrices[i * 2] === 0 ? '-' : maxPrices[i * 2];
-              amText = `${amMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${amMax}`;
+              let amMin = minPrices[i * 2];
+              let amMax = maxPrices[i * 2];
+              
+              if (amMin === 999 || amMin === null || amMin === undefined) amMin = '-';
+              if (amMax === 0 || amMax === null || amMax === undefined) amMax = '-';
+              
+              if (amMin === '-' && amMax === '-') {
+                amText = '<span class="text-gray-300">-</span>';
+              } else {
+                amText = `${amMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${amMax}`;
+              }
             }
 
+            // PM の処理
             const pmInputEl = document.getElementById(inputIds[i * 2 + 1]);
             const pmInputVal = pmInputEl ? parseInt(pmInputEl.value, 10) : NaN;
             let pmText = '';
+            
             if (!isNaN(pmInputVal)) {
               pmText = pmInputVal;
             } else {
-              const pmMin = minPrices[i * 2 + 1] === 999 ? '-' : minPrices[i * 2 + 1];
-              const pmMax = maxPrices[i * 2 + 1] === 0 ? '-' : maxPrices[i * 2 + 1];
-              pmText = `${pmMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${pmMax}`;
+              let pmMin = minPrices[i * 2 + 1];
+              let pmMax = maxPrices[i * 2 + 1];
+              
+              if (pmMin === 999 || pmMin === null || pmMin === undefined) pmMin = '-';
+              if (pmMax === 0 || pmMax === null || pmMax === undefined) pmMax = '-';
+              
+              if (pmMin === '-' && pmMax === '-') {
+                pmText = '<span class="text-gray-300">-</span>';
+              } else {
+                pmText = `${pmMin} <span class="text-gray-300 font-normal mx-0.5">~</span> ${pmMax}`;
+              }
             }
             
             trAM += `<td class="p-3 border-r border-nook-light last:border-0"><div class="text-[11px] font-bold text-gray-400 mb-1">AM</div><div class="font-extrabold text-gray-700">${amText}</div></td>`;
