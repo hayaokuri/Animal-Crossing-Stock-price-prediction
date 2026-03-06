@@ -296,6 +296,18 @@
           if (!isNaN(getVal(id))) lastInputIndex = idx + 2;
         });
 
+        // 実際の最新入力値を取得
+        const actualPricesData = sellPrices.map(val => isNaN(val) ? null : val);
+        let lastActualVal = NaN;
+        let lastActualIdx = -1;
+        for (let i = 11; i >= 0; i--) {
+          if (actualPricesData[i] !== null) {
+            lastActualVal = actualPricesData[i];
+            lastActualIdx = i;
+            break;
+          }
+        }
+
         const minPrices = Array(12).fill(999);
         const maxPrices = Array(12).fill(0);
         const expectedPrices = Array(12).fill(0);
@@ -395,18 +407,20 @@
             banner.classList.add('bg-yellow-50', 'border-yellow-300', 'text-yellow-800');
             banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-yellow-700"><span>🤔</span> 値上がり確率: ${increasePercent}%</div><div class="text-sm mt-2 font-medium text-gray-600">最高値の予定日時: <span class="font-bold text-sm bg-white px-3 py-1 rounded-full border border-yellow-200 ml-1 shadow-sm">${peakLabel}</span></div>`;
           } else {
-            banner.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
-            banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-red-600"><span>📉</span> 値上がり確率: 0%</div><div class="text-sm mt-2 text-gray-600 font-medium leading-relaxed">これ以上の値上がりは見込めません。売却するか他プレイヤーの島を頼ることを推奨します。</div>`;
+            // 値上がり確率0%時の分岐
+            if (!isNaN(lastActualVal) && lastActualVal > basePrice) {
+              // 利益が出ている（ピーク時）
+              banner.classList.add('bg-blue-50', 'border-blue-300', 'text-blue-800');
+              banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-blue-700"><span>🚨</span> 今が売り時です！</div><div class="text-sm mt-2 text-gray-600 font-medium leading-relaxed">これ以上の値上がりは見込めません。現在の価格で直ちに利益を確定させることを強く推奨します。</div>`;
+            } else {
+              // 利益が出ていない（下落時）
+              banner.classList.add('bg-red-50', 'border-red-200', 'text-red-800');
+              banner.innerHTML = `<div class="font-extrabold text-lg flex items-center gap-2 text-red-600"><span>📉</span> 値上がり確率: 0%</div><div class="text-sm mt-2 text-gray-600 font-medium leading-relaxed">これ以上の値上がりは見込めません。損切りするか、他プレイヤーの島を頼ることを推奨します。</div>`;
+            }
           }
           banner.style.display = 'block';
         } else {
           banner.style.display = 'none';
-        }
-
-        const actualPricesData = sellPrices.map(val => isNaN(val) ? null : val);
-        let lastActualIdx = -1;
-        for (let i = 0; i < 12; i++) {
-          if (actualPricesData[i] !== null) lastActualIdx = i;
         }
 
         for (let i = 0; i < lastActualIdx; i++) {
