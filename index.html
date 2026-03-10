@@ -22,7 +22,6 @@
   </script>
   <style>
     input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { opacity: 1; }
-    /* アコーディオンのデフォルトマーカーを非表示 */
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
   </style>
@@ -392,7 +391,7 @@
           });
           outputHtml += `</div>`;
 
-          // 詳細な抽出データ（アコーディオン）の描画
+          // 詳細な抽出データ（数値をすべて出すアコーディオン）の描画
           const sortedPossibilities = [...possibilities].sort((a, b) => {
              const probA = (typeof a.probability === 'number' && !isNaN(a.probability)) ? a.probability : 1;
              const probB = (typeof b.probability === 'number' && !isNaN(b.probability)) ? b.probability : 1;
@@ -409,7 +408,7 @@
                   <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="18"><path d="M6 9l6 6 6-6"></path></svg>
                 </span>
               </summary>
-              <div class="p-4 pt-2 text-xs text-gray-600 max-h-60 overflow-y-auto space-y-2 border-t-2 border-nook-light/50 bg-nook-bg/30">
+              <div class="p-3 text-xs text-gray-600 max-h-96 overflow-y-auto space-y-3 border-t-2 border-nook-light/50 bg-nook-bg/30">
           `;
           
           sortedPossibilities.forEach((p, i) => {
@@ -418,10 +417,32 @@
             let pNum = p.pattern_number;
             let pName = (pNum >= 0 && pNum <= 3) ? patternNames[pNum] : '波型';
             
+            let daysHtml = '';
+            const dayNames = ['月', '火', '水', '木', '金', '土'];
+            // 各曜日のAM/PM推移グリッドを生成
+            for(let d=0; d<6; d++) {
+                let am = p.prices[2 + d*2];
+                let pm = p.prices[3 + d*2];
+                let amText = am.min === am.max ? am.min : `${am.min}~${am.max}`;
+                let pmText = pm.min === pm.max ? pm.min : `${pm.min}~${pm.max}`;
+                daysHtml += `
+                  <div class="bg-white rounded flex flex-col justify-center py-1 border border-nook-light/60 shadow-sm">
+                    <span class="text-[9px] text-gray-400 font-bold mb-0.5">${dayNames[d]}</span>
+                    <span class="text-[10px] text-gray-700 font-bold leading-tight">${amText}</span>
+                    <span class="text-[10px] text-gray-700 font-bold leading-tight">${pmText}</span>
+                  </div>
+                `;
+            }
+
             outputHtml += `
-              <div class="flex justify-between items-center border-b border-nook-light/50 pb-2 last:border-0 last:pb-0">
-                <span class="font-medium text-gray-700">${i+1}. ${pName} <span class="text-gray-400 font-normal ml-1">(最大${p.weekMax})</span></span>
-                <span class="font-bold text-nook-leaf bg-white px-2 py-0.5 rounded shadow-sm border border-nook-light">${probPercent}%</span>
+              <div class="border-b border-nook-light/80 pb-3 last:border-0 last:pb-0">
+                <div class="flex justify-between items-center mb-1.5 px-1">
+                  <span class="font-bold text-gray-700 text-[13px]">${i+1}. ${pName} <span class="text-gray-400 font-normal ml-1 text-[11px]">(最大${p.weekMax})</span></span>
+                  <span class="font-extrabold text-nook-leaf bg-white px-2 py-0.5 rounded shadow-sm border border-nook-light">${probPercent}%</span>
+                </div>
+                <div class="grid grid-cols-6 gap-1 text-center">
+                  ${daysHtml}
+                </div>
               </div>
             `;
           });
