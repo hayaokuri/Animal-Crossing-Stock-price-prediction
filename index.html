@@ -27,7 +27,7 @@
   </style>
 </head>
 <body class="bg-nook-bg text-nook-brown font-maru">
-  <div class="container mx-auto px-4 py-8 max-w-[1440px]">
+  <div class="container mx-auto px-4 py-8 max-w-[1500px]">
     
     <header class="text-center mb-10">
       <h1 class="text-3xl md:text-4xl font-extrabold text-nook-leaf flex items-center justify-center drop-shadow-sm">
@@ -35,13 +35,13 @@
       </h1>
     </header>
 
-    <main class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6 xl:gap-8">
+    <main class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-6 xl:gap-8">
       
-      <div class="xl:col-span-1 space-y-6">
+      <div class="xl:col-span-3 space-y-6">
         <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light h-full">
           <h2 class="text-xl font-bold mb-5 flex items-center justify-between text-nook-brown">
             <span>価格を入力</span>
-            <span class="text-xs font-bold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full shadow-sm">黄色は現在時刻</span>
+            <span class="text-[10px] sm:text-xs font-bold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full shadow-sm">黄色は現在時刻</span>
           </h2>
           
           <div class="space-y-5">
@@ -84,7 +84,7 @@
         </section>
       </div>
 
-      <div class="xl:col-span-2 space-y-6">
+      <div class="xl:col-span-5 space-y-6">
         <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light">
           <h2 class="text-xl font-bold mb-6 text-nook-brown">価格推移予測グラフ</h2>
           <div class="relative h-[300px] md:h-[400px]"><canvas id="priceChart"></canvas></div>
@@ -107,9 +107,13 @@
             </table>
           </div>
         </section>
+
+        <div id="detailSection" style="display: none;">
+          <div id="detailResult"></div>
+        </div>
       </div>
 
-      <div class="xl:col-span-1 space-y-6">
+      <div class="xl:col-span-4 space-y-6">
         <section class="bg-nook-card p-6 md:p-7 rounded-[2rem] shadow-sm border-2 border-nook-light h-full">
           <h2 class="text-xl font-bold mb-5 text-nook-brown">推測されるパターン</h2>
           <div id="futureBanner" style="display: none;" class="mb-6 p-4 rounded-2xl border-2 shadow-sm transition-all duration-300"></div>
@@ -245,6 +249,8 @@
             
             const pName = bestPattern >= 0 ? patternNames[bestPattern] : '不明';
             document.getElementById('result').innerHTML = `<div class="bg-blue-50 text-blue-800 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">新しい週になりました。<br>先週のデータから前回パターンを「<b class="text-base">${pName}</b>」に自動設定しました。数値を入力してください。</div>`;
+            const detailSec = document.getElementById('detailSection');
+            if(detailSec) detailSec.style.display = 'none';
             saveState();
           } else {
             document.getElementById('previous_pattern').value = state.prev;
@@ -261,6 +267,8 @@
         }
       } else {
         document.getElementById('result').innerHTML = `<div class="text-gray-400 p-4 text-center text-sm bg-gray-50 rounded-xl border border-gray-100">数値を入力して<br>予測を実行してください</div>`;
+        const detailSec = document.getElementById('detailSection');
+        if(detailSec) detailSec.style.display = 'none';
       }
     }
 
@@ -374,14 +382,14 @@
             }))
             .sort((a, b) => b.percent - a.percent);
 
-          // 大まかな予測パターンの描画
+          // 【右カラム用】大まかな予測パターンの描画
           let outputHtml = `<div class="space-y-3">`;
           validPatterns.forEach(vp => {
             outputHtml += `
-              <div class="bg-nook-bg border border-nook-light p-3.5 rounded-2xl flex flex-col gap-1 shadow-sm">
+              <div class="bg-nook-bg border border-nook-light p-4 rounded-2xl flex flex-col gap-1.5 shadow-sm">
                 <div class="flex justify-between items-center">
-                  <span class="font-extrabold text-gray-700">${vp.name}</span>
-                  <span class="text-nook-leaf font-extrabold text-lg">${vp.percent.toFixed(1)}%</span>
+                  <span class="font-extrabold text-gray-700 text-base">${vp.name}</span>
+                  <span class="text-nook-leaf font-extrabold text-xl">${vp.percent.toFixed(1)}%</span>
                 </div>
                 <div class="text-xs text-gray-500 text-right mt-1">
                   最大予測: <span class="font-bold text-gray-800 text-sm ml-1">${vp.max}</span> ベル
@@ -390,25 +398,26 @@
             `;
           });
           outputHtml += `</div>`;
+          document.getElementById('result').innerHTML = outputHtml;
 
-          // 詳細な抽出データ（数値をすべて出すアコーディオン）の描画
+          // 【中央カラム用】詳細な抽出データのアコーディオン
           const sortedPossibilities = [...possibilities].sort((a, b) => {
              const probA = (typeof a.probability === 'number' && !isNaN(a.probability)) ? a.probability : 1;
              const probB = (typeof b.probability === 'number' && !isNaN(b.probability)) ? b.probability : 1;
              return probB - probA;
           });
 
-          outputHtml += `
-            <details class="mt-4 group bg-white border-2 border-nook-light rounded-2xl shadow-sm transition-all duration-300 text-sm overflow-hidden">
-              <summary class="p-3.5 cursor-pointer font-bold text-nook-brown flex items-center justify-between outline-none hover:bg-nook-bg transition-colors">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-lg">🔍</span>詳細データを見る (${possibilities.length}件)
+          let detailHtml = `
+            <details class="group bg-white border-2 border-nook-light rounded-[2rem] shadow-sm transition-all duration-300 text-sm overflow-hidden">
+              <summary class="p-6 md:p-7 cursor-pointer font-bold text-nook-brown flex items-center justify-between outline-none hover:bg-nook-bg transition-colors">
+                <div class="flex items-center gap-2 text-lg">
+                  <span>🔍</span> 詳細データを見る (${possibilities.length}件)
                 </div>
                 <span class="transition duration-300 group-open:-rotate-180 text-nook-leaf">
-                  <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="18"><path d="M6 9l6 6 6-6"></path></svg>
+                  <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
                 </span>
               </summary>
-              <div class="p-3 text-xs text-gray-600 max-h-96 overflow-y-auto space-y-3 border-t-2 border-nook-light/50 bg-nook-bg/30">
+              <div class="p-6 md:p-7 pt-2 text-sm text-gray-600 max-h-[600px] overflow-y-auto space-y-5 border-t-2 border-nook-light/50 bg-nook-bg/30">
           `;
           
           sortedPossibilities.forEach((p, i) => {
@@ -419,39 +428,42 @@
             
             let daysHtml = '';
             const dayNames = ['月', '火', '水', '木', '金', '土'];
-            // 各曜日のAM/PM推移グリッドを生成
+            
             for(let d=0; d<6; d++) {
                 let am = p.prices[2 + d*2];
                 let pm = p.prices[3 + d*2];
                 let amText = am.min === am.max ? am.min : `${am.min}~${am.max}`;
                 let pmText = pm.min === pm.max ? pm.min : `${pm.min}~${pm.max}`;
+                
                 daysHtml += `
-                  <div class="bg-white rounded flex flex-col justify-center py-1 border border-nook-light/60 shadow-sm">
-                    <span class="text-[9px] text-gray-400 font-bold mb-0.5">${dayNames[d]}</span>
-                    <span class="text-[10px] text-gray-700 font-bold leading-tight">${amText}</span>
-                    <span class="text-[10px] text-gray-700 font-bold leading-tight">${pmText}</span>
+                  <div class="bg-white rounded-xl flex flex-col justify-center py-2 border border-nook-light/80 shadow-sm">
+                    <span class="text-xs text-gray-400 font-bold mb-1">${dayNames[d]}</span>
+                    <span class="text-[13px] text-gray-700 font-bold leading-tight">${amText}</span>
+                    <span class="text-[13px] text-gray-700 font-bold leading-tight">${pmText}</span>
                   </div>
                 `;
             }
 
-            outputHtml += `
-              <div class="border-b border-nook-light/80 pb-3 last:border-0 last:pb-0">
-                <div class="flex justify-between items-center mb-1.5 px-1">
-                  <span class="font-bold text-gray-700 text-[13px]">${i+1}. ${pName} <span class="text-gray-400 font-normal ml-1 text-[11px]">(最大${p.weekMax})</span></span>
-                  <span class="font-extrabold text-nook-leaf bg-white px-2 py-0.5 rounded shadow-sm border border-nook-light">${probPercent}%</span>
+            detailHtml += `
+              <div class="bg-white p-4 rounded-2xl border border-nook-light shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                  <span class="font-bold text-gray-700 text-base">${i+1}. ${pName} <span class="text-gray-400 font-normal ml-2 text-xs">(最大${p.weekMax})</span></span>
+                  <span class="font-extrabold text-nook-leaf text-base">${probPercent}%</span>
                 </div>
-                <div class="grid grid-cols-6 gap-1 text-center">
+                <div class="grid grid-cols-6 gap-2 text-center">
                   ${daysHtml}
                 </div>
               </div>
             `;
           });
-          outputHtml += `</div></details>`;
+          detailHtml += `</div></details>`;
           
-          document.getElementById('result').innerHTML = outputHtml;
+          document.getElementById('detailResult').innerHTML = detailHtml;
+          document.getElementById('detailSection').style.display = 'block';
 
         } else {
           document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm text-center font-bold">該当パターンがありません。<br>入力値を確認してください。</div>`;
+          document.getElementById('detailSection').style.display = 'none';
         }
         
         const banner = document.getElementById('futureBanner');
@@ -573,6 +585,8 @@
         }
       } catch (e) {
         document.getElementById('result').innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-xl border border-red-200 text-sm font-bold shadow-sm">処理エラー: ${e.message}</div>`;
+        const detailSec = document.getElementById('detailSection');
+        if(detailSec) detailSec.style.display = 'none';
       }
     }
 
