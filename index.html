@@ -178,7 +178,9 @@
     function getBestPattern(prices, isFirstBuy, prevPattern) {
       try {
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
-        const possibilities = predictor.analyze_possibilities();
+        const rawPossibilities = predictor.analyze_possibilities();
+        const possibilities = rawPossibilities.filter(p => typeof p.pattern_number === 'number' && p.pattern_number >= 0 && p.pattern_number <= 3);
+        
         if (possibilities.length === 0) return -1;
         let best = -1, maxProb = -1;
         possibilities.forEach(p => {
@@ -295,7 +297,10 @@
         const prevPattern = prevPatEl ? parseInt(prevPatEl.value, 10) : -1;
 
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
-        const possibilities = predictor.analyze_possibilities();
+        const rawPossibilities = predictor.analyze_possibilities();
+        
+        // ★ バグ修正: 無効なダミーデータ（undefined等）を完全に除外して純粋な予測だけを残す
+        const possibilities = rawPossibilities.filter(p => typeof p.pattern_number === 'number' && p.pattern_number >= 0 && p.pattern_number <= 3);
 
         let totalProb = 0;
         let futureSpikeProb = 0;
@@ -334,11 +339,6 @@
             totalProb += probWeight;
             
             let pNum = p.pattern_number;
-            if (pNum === 1) pNum = 1;
-            else if (pNum === 2) pNum = 2;
-            else if (pNum === 3) pNum = 3;
-            else pNum = 0;
-
             groupStats[pNum].prob += probWeight;
             
             let pWeekMax = 0;
@@ -424,7 +424,7 @@
             const probWeight = (typeof p.probability === 'number' && !isNaN(p.probability)) ? p.probability : 1;
             const probPercent = totalProb > 0 ? ((probWeight / totalProb) * 100).toFixed(1) : 0;
             let pNum = p.pattern_number;
-            let pName = (pNum >= 0 && pNum <= 3) ? patternNames[pNum] : '波型';
+            let pName = patternNames[pNum];
             
             let daysHtml = '';
             const dayNames = ['月', '火', '水', '木', '金', '土'];
