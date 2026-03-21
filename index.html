@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/gh/mikebryant/ac-nh-turnip-prices@master/js/predictions.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     tailwind.config = { 
       theme: { 
@@ -43,6 +44,16 @@
             <span>価格を入力</span>
             <span class="text-[10px] sm:text-xs font-bold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full shadow-sm">黄色は現在時刻</span>
           </h2>
+
+          <div class="mb-5 p-4 rounded-2xl border-2 border-dashed border-nook-green/50 bg-nook-light/20 text-center relative hover:bg-nook-light/40 transition">
+            <label class="cursor-pointer flex flex-col items-center justify-center space-y-1">
+               <span class="text-2xl">📸</span>
+               <span class="text-sm font-bold text-nook-leaf">スクショから自動入力</span>
+               <span class="text-[10px] text-gray-500">タップして画像選択、またはペースト(Ctrl+V)</span>
+               <input type="file" id="imageInput" accept="image/*" class="hidden">
+            </label>
+            <div id="ocrStatus" class="text-xs font-bold text-blue-600 mt-2 hidden bg-blue-50 p-2 rounded-lg">読み込み中...</div>
+          </div>
           
           <div class="space-y-5">
             <div class="bg-nook-bg p-4 rounded-2xl border border-nook-light space-y-3">
@@ -143,6 +154,90 @@
     const labels = ["月AM", "月PM", "火AM", "火PM", "水AM", "水PM", "木AM", "木PM", "金AM", "金PM", "土AM", "土PM"];
     const inputIds = ['m1','m2','tu1','tu2','w1','w2','th1','th2','f1','f2','sa1','sa2'];
     let chartInstance = null;
+
+    // --- OCR (画像解析) 処理 ---
+    async function processOCR(imageSource) {
+      const statusEl = document.getElementById('ocrStatus');
+      statusEl.classList.remove('hidden', 'text-red-600', 'bg-red-50');
+      statusEl.classList.add('text-blue-600', 'bg-blue-50');
+      statusEl.textContent = '画像解析中... (数秒かかります)';
+
+      try {
+        // Tesseractの初期化 (英語モデルを利用して数字とアルファベットを正確に読む)
+        const worker = await Tesseract.createWorker('eng');
+        const { data: { text } } = await worker.recognize(imageSource);
+        await worker.terminate();
+
+        const lines = text.split('\n');
+        let amPrices = [];
+        let pmPrices = [];
+
+        // 「AM」と「PM」が含まれる行を探し、数字だけを配列にする
+        lines.forEach(line => {
+          const upperLine = line.toUpperCase();
+          if (upperLine.includes('AM')) {
+            const nums = upperLine.replace(/AM/g, '').match(/\d+/g);
+            if (nums && nums.length === 6) amPrices = nums;
+          } else if (upperLine.includes('PM')) {
+            const nums = upperLine.replace(/PM/g, '').match(/\d+/g);
+            if (nums && nums.length === 6) pmPrices = nums;
+          }
+        });
+
+        // AM/PMの文字検知が漏れた場合のフォールバック（純粋に6個の数字が並ぶ行を探す）
+        if (amPrices.length !== 6 || pmPrices.length !== 6) {
+          const numLines = lines.map(l => l.match(/\d+/g)).filter(nums => nums && nums.length === 6);
+          if (numLines.length >= 2) {
+            amPrices = numLines[0];
+            pmPrices = numLines[1];
+          }
+        }
+
+        if (amPrices.length === 6 && pmPrices.length === 6) {
+          // 画面の入力枠に反映
+          const days = ['m', 'tu', 'w', 'th', 'f', 'sa'];
+          days.forEach((d, i) => {
+            document.getElementById(d + '1').value = amPrices[i];
+            document.getElementById(d + '2').value = pmPrices[i];
+          });
+          
+          statusEl.classList.replace('text-blue-600', 'text-green-600');
+          statusEl.classList.replace('bg-blue-50', 'bg-green-50');
+          statusEl.textContent = '読み込み成功！';
+          
+          saveState();
+          runPrediction();
+          setTimeout(() => statusEl.classList.add('hidden'), 3000);
+        } else {
+          throw new Error("価格の行（6つの数字）が見つかりませんでした。");
+        }
+      } catch (error) {
+        statusEl.classList.replace('text-blue-600', 'text-red-600');
+        statusEl.classList.replace('bg-blue-50', 'bg-red-50');
+        statusEl.textContent = 'エラー: ' + error.message;
+        setTimeout(() => statusEl.classList.add('hidden'), 4000);
+      }
+    }
+
+    // ファイルアップロードのイベント
+    document.getElementById('imageInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) processOCR(file);
+      e.target.value = ''; // 連続アップロード可能にするためリセット
+    });
+
+    // ペースト（Ctrl+V）のイベント
+    window.addEventListener('paste', (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file') {
+          const blob = item.getAsFile();
+          processOCR(blob);
+        }
+      }
+    });
+    // -------------------------
 
     function highlightCurrentTime() {
       const d = new Date();
@@ -299,7 +394,6 @@
         const predictor = new Predictor(prices, isFirstBuy, prevPattern);
         const rawPossibilities = predictor.analyze_possibilities();
         
-        // ★ バグ修正: 無効なダミーデータ（undefined等）を完全に除外して純粋な予測だけを残す
         const possibilities = rawPossibilities.filter(p => typeof p.pattern_number === 'number' && p.pattern_number >= 0 && p.pattern_number <= 3);
 
         let totalProb = 0;
@@ -382,7 +476,6 @@
             }))
             .sort((a, b) => b.percent - a.percent);
 
-          // 【右カラム用】大まかな予測パターンの描画
           let outputHtml = `<div class="space-y-3">`;
           validPatterns.forEach(vp => {
             outputHtml += `
@@ -400,7 +493,6 @@
           outputHtml += `</div>`;
           document.getElementById('result').innerHTML = outputHtml;
 
-          // 【中央カラム用】詳細な抽出データのアコーディオン
           const sortedPossibilities = [...possibilities].sort((a, b) => {
              const probA = (typeof a.probability === 'number' && !isNaN(a.probability)) ? a.probability : 1;
              const probB = (typeof b.probability === 'number' && !isNaN(b.probability)) ? b.probability : 1;
